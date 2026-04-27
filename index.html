@@ -1,739 +1,479 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MedBill Pro — Invoice System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MedBill Pro</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config={theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif']}}}}
+tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif']}}}}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-:root{--sb:260px}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#f8fafc;color:#1e293b}
+body{font-family:'Inter',sans-serif;padding-bottom:env(safe-area-inset-bottom)}
 ::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:4px}
 ::-webkit-scrollbar-track{background:transparent}
 
-@keyframes vIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes cIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-@keyframes tIn{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}
-@keyframes tOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(80px)}}
-@keyframes mIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-@keyframes rOut{to{opacity:0;transform:translateX(-20px);height:0;margin:0;padding:0;overflow:hidden}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse2{0%,100%{box-shadow:0 0 0 0 rgba(5,150,105,.35)}70%{box-shadow:0 0 0 10px rgba(5,150,105,0)}}
+@keyframes toastIn{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(80px)}}
+@keyframes rippleEffect{0%{transform:scale(0);opacity:.5}100%{transform:scale(2.5);opacity:0}}
+@keyframes sectionReveal{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
 
-.v-enter{animation:vIn .35s cubic-bezier(.16,1,.3,1) forwards}
-.c-enter{animation:cIn .4s cubic-bezier(.16,1,.3,1) forwards;opacity:0}
-.t-enter{animation:tIn .4s cubic-bezier(.16,1,.3,1) forwards}
-.t-exit{animation:tOut .3s ease forwards}
-.m-enter{animation:mIn .3s cubic-bezier(.16,1,.3,1) forwards}
-.pulse-dot{animation:pulse 2s ease-in-out infinite}
-.r-exit{animation:rOut .25s ease forwards}
+.anim-up{animation:fadeUp .5s cubic-bezier(.16,1,.3,1) both;opacity:0}
+.anim-fade{animation:fadeIn .3s ease both}
+.anim-scale{animation:scaleIn .3s cubic-bezier(.16,1,.3,1) both}
+.anim-slide-up{animation:slideUp .35s cubic-bezier(.16,1,.3,1) both}
 
-.btn-p:active{transform:scale(.96);transition:transform .1s}
-input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(5,150,105,.15);border-color:#059669!important}
+.section-reveal{opacity:0;animation:sectionReveal .6s cubic-bezier(.16,1,.3,1) both}
 
-#sidebar{transition:transform .3s cubic-bezier(.16,1,.3,1)}
-#sb-overlay{transition:opacity .3s ease}
+.t-in{animation:toastIn .4s cubic-bezier(.16,1,.3,1) both}
+.t-out{animation:toastOut .3s ease both}
 
-@media print{body *{visibility:hidden}#inv-export,#inv-export *{visibility:visible}#inv-export{position:absolute;left:0;top:0}}
+.btn-tap:active{transform:scale(.96);transition:transform .08s}
+
+/* Ripple */
+.ripple-host{position:relative;overflow:hidden}
+.ripple-host .ripple-circle{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);pointer-events:none;animation:rippleEffect .55s ease-out forwards;transform:scale(0)}
+
+input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(5,150,105,.18);border-color:#059669!important}
+.dark input:focus,.dark select:focus,.dark textarea:focus{box-shadow:0 0 0 3px rgba(16,185,129,.2);border-color:#10b981!important}
+
+.card-hover{transition:all .25s cubic-bezier(.16,1,.3,1)}
+.card-hover:hover{transform:translateY(-4px);box-shadow:0 12px 40px -12px rgba(0,0,0,.15)}
+.dark .card-hover:hover{box-shadow:0 12px 40px -12px rgba(0,0,0,.4)}
+.glass{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+
+/* Horizontal scroll items */
+.items-scroll{display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+.items-scroll::-webkit-scrollbar{display:none}
+.item-row-flex{display:flex;align-items:center;gap:8px;min-width:max-content;flex-shrink:0}
 </style>
 </head>
-<body>
-<div id="app" class="flex min-h-screen"></div>
-<div id="toasts" class="fixed top-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+<body class="bg-gray-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased transition-colors">
+
+<div id="app"></div>
+<div id="toasts" class="fixed top-4 right-4 z-[999] flex flex-col gap-2.5 pointer-events-none max-w-sm"></div>
 <div id="inv-export" style="position:fixed;left:-9999px;top:0;z-index:-1;width:800px;background:#fff"></div>
 <input type="file" id="f-json" accept=".json" class="hidden">
 <input type="file" id="f-logo" accept="image/*" class="hidden">
+<input type="file" id="f-sig" accept="image/*" class="hidden">
 
 <script>
-/* ===== MedBill Pro — Full Application ===== */
+// ============================================================
+//  MedBill Pro — Premium Medical Invoice SaaS Application
+// ============================================================
 
-// --- SVG Icons ---
-const I={
-layout:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
-plus:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
-file:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
-gear:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
-search:`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
-dl:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`,
-ul:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>`,
-arch:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>`,
-trash:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
-edit:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
-eye:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg>`,
-x:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
-menu:`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
-wa:`<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`,
-img:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
-xls:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>`,
-chk:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
-dollar:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-fchk:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m9 15 2 2 4-4"/></svg>`,
-cal:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`,
-abox:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>`,
-left:`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>`,
-steth:`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
-cam:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>`,
-unarch:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/><path d="m8 17 4-4 4 4"/></svg>`,
-csv:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>`,
-json:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>`,
-printer:`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>`,
+const IC={
+  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
+  x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+  edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
+  chk:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  save:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+  refresh:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
+  wa:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`,
+  pdf:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+  img:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+  xls:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+  gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  sun:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
+  moon:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
+  system:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="4" rx="2"/><path d="M12 16v2M8 20h8"/><path d="M8 12h2M14 12h2"/></svg>`,
+  steth:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
+  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  phone:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
+  mail:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
+  map:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
+  cal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`,
+  dollar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  pill:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`,
+  award:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`,
+  arrow:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>`,
+  dash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
+  list:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`,
+  note:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>`,
 };
 
+function ic(name,w=18,h=18){return`<span class="inline-flex items-center justify-center" style="width:${w}px;height:${h}px">${IC[name]||''}</span>`}
+function icS(name,s=16){return ic(name,s,s)}
+
 // --- State ---
-const SK='medbill_pro_v2';
-function defState(){return{view:'dashboard',invoices:[],profile:{chamberName:'HealthFirst Medical Chamber',address:'123 Medical Plaza, Dhanmondi, Dhaka 1205',contact:'+880 1712-345678',doctorName:'Dr. Aminul Haque',logo:null,currency:'BDT',sym:'৳'},nextNum:1001,editId:null,search:'',filter:'all',sort:'date-desc',sbOpen:false,detailId:null}}
+const SK='medbill_v6';
+function defState(){return{tab:'dashboard',invoices:[],profile:{appName:'MedBill Pro',chamberName:'HealthFirst Medical Chamber',address:'123 Medical Plaza, Dhanmondi, Dhaka 1205',phone:'+880 1712-345678',email:'info@healthfirst.com.bd',logo:null,signature:null,doctorName:'Dr. Aminul Haque',doctorDegree:'MBBS, FCPS (Medicine)',currency:'BDT',sym:'৳'},nextNum:1001,search:'',filter:'all',theme:'system',showInvoice:false,editId:null,showSettings:false,settingsTab:'profile',viewInvId:null}}
 let S=loadS();
-function loadS(){try{const d=localStorage.getItem(SK);if(d)return{...defState(),...JSON.parse(d)}}catch(e){}return defState()}
+function loadS(){try{const d=localStorage.getItem(SK);if(d){const p=JSON.parse(d);return{...defState(),...p,showInvoice:false,showSettings:false,settingsTab:'profile',viewInvId:null}}}catch(e){}return defState()}
 function saveS(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){}}
+
+// --- Theme (Fixed System Detection) ---
+function getSystemDark(){try{return window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){return false}}
+function applyTheme(){
+  const h=document.documentElement;h.classList.remove('dark');
+  const isDark=S.theme==='dark'||(S.theme==='system'&&getSystemDark());
+  if(isDark)h.classList.add('dark');
+}
+function setTheme(t){S.theme=t;saveS();applyTheme();render()}
+applyTheme();
+// Listen for system theme changes
+try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(S.theme==='system'){applyTheme()}})}catch(e){}
 
 // --- Utils ---
 function gid(){return'inv_'+Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
 function fc(a){return S.profile.sym+' '+Number(a||0).toFixed(2)}
 function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
 function today(){return new Date().toISOString().split('T')[0]}
+function nowTime(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
 
 function toast(msg,type='success'){
-  const c=document.getElementById('toasts');
-  const cols={success:'bg-emerald-600',error:'bg-red-600',info:'bg-slate-800',warning:'bg-amber-500'};
-  const t=document.createElement('div');
-  t.className=`pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${cols[type]||cols.info} t-enter`;
-  t.textContent=msg;
-  c.appendChild(t);
-  setTimeout(()=>{t.classList.remove('t-enter');t.classList.add('t-exit');setTimeout(()=>t.remove(),300)},3000);
+  const c=document.getElementById('toasts');const cols={success:'bg-emerald-600 dark:bg-emerald-700',error:'bg-red-600',info:'bg-slate-700',warning:'bg-amber-500'};
+  const t=document.createElement('div');t.className=`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${cols[type]||cols.info} t-in`;
+  t.innerHTML=`${icS('chk',16)}<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.classList.replace('t-in','t-out');setTimeout(()=>t.remove(),300)},3000);
+}
+function confirm2(msg,cb){
+  const m=document.createElement('div');m.className='fixed inset-0 z-[500] flex items-center justify-center p-4';m.style.cssText='background:rgba(0,0,0,.5);backdrop-filter:blur(4px)';
+  m.innerHTML=`<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm anim-scale"><h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Confirm</h3><p class="text-sm text-slate-500 dark:text-slate-400 mb-6">${msg}</p><div class="flex gap-3 justify-end"><button class="cbtn px-4 py-2 text-sm font-medium border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg dark:text-slate-300">Cancel</button><button class="obtn px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg">Delete</button></div></div>`;
+  document.body.appendChild(m);m.querySelector('.cbtn').onclick=()=>m.remove();m.querySelector('.obtn').onclick=()=>{m.remove();cb()};m.addEventListener('click',e=>{if(e.target===m)m.remove()});
 }
 
-function calcRow(q,p,d,t){const b=q*p;const da=b*(d/100);const ad=b-da;return ad+ad*(t/100)}
-function calcTotals(items){let s=0,d=0,t=0;items.forEach(i=>{const b=i.quantity*i.price;const da=b*(i.discount/100);const ad=b-da;const ta=ad*(i.tax/100);s+=b;d+=da;t+=ta});return{subtotal:s,totalDiscount:d,totalTax:t,grandTotal:s-d+t}}
+function calcSummary(items,docFee,discount){const tI=items.length;const tQ=items.reduce((s,i)=>s+(i.quantity||0),0);const pS=items.reduce((s,i)=>s+(i.quantity||0)*(i.unitPrice||0),0);const tP=pS+(docFee||0)-(discount||0);return{totalItems:tI,totalQty:tQ,productsSubtotal:pS,doctorFee:docFee||0,discount:discount||0,totalPayable:tP}}
 
-// --- Sidebar ---
-function rSidebar(){
-  const navs=[{id:'dashboard',l:'Dashboard',ic:I.layout},{id:'new-invoice',l:'New Invoice',ic:I.plus},{id:'history',l:'Invoice History',ic:I.file},{id:'settings',l:'Settings',ic:I.gear}];
-  const ac=S.invoices.filter(i=>!i.archived).length;
-  const ar=S.invoices.filter(i=>i.archived).length;
-  return`
-  <aside id="sidebar" class="fixed lg:sticky top-0 left-0 h-screen z-50 w-[260px] bg-slate-900 text-white flex flex-col transform ${S.sbOpen?'translate-x-0':'-translate-x-full'} lg:translate-x-0">
-    <div class="px-6 py-5 border-b border-slate-700/50">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center flex-shrink-0">${I.steth}</div>
-        <div><h1 class="text-base font-bold tracking-tight">MedBill Pro</h1><p class="text-[11px] text-slate-400 font-medium">Invoice Management</p></div>
-      </div>
-    </div>
-    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      ${navs.map(n=>`<button data-nav="${n.id}" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all btn-p ${S.view===n.id||(S.view==='invoice-detail'&&n.id==='history')?'bg-emerald-600/20 text-emerald-400':'text-slate-300 hover:bg-slate-800 hover:text-white'}"><span class="flex-shrink-0">${n.ic}</span>${n.l}</button>`).join('')}
-    </nav>
-    <div class="px-4 py-4 border-t border-slate-700/50">
-      <div class="bg-slate-800/60 rounded-xl p-4">
-        <div class="flex justify-between text-xs mb-2"><span class="text-slate-400">Active</span><span class="text-emerald-400 font-semibold">${ac}</span></div>
-        <div class="flex justify-between text-xs"><span class="text-slate-400">Archived</span><span class="text-slate-300 font-semibold">${ar}</span></div>
-      </div>
-    </div>
-  </aside>
-  <div id="sb-overlay" class="fixed inset-0 bg-black/50 z-40 lg:hidden ${S.sbOpen?'opacity-100':'opacity-0 pointer-events-none'}" data-act="close-sb"></div>`;
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML=renderHeader()+`<div class="pb-24">${renderContent()}</div>`+renderBottomNav();
+  if(S.showInvoice)app.innerHTML+=renderInvoiceModal();
+  if(S.showSettings)app.innerHTML+=renderSettingsModal();
+  if(S.viewInvId)app.innerHTML+=renderViewModal();
 }
 
-// --- Topbar ---
-function rTop(title){
-  return`<header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-gray-100">
-  <div class="flex items-center justify-between h-16 px-4 lg:px-8">
-    <div class="flex items-center gap-4">
-      <button data-act="toggle-sb" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors">${I.menu}</button>
-      <h2 class="text-lg font-bold text-slate-900">${title}</h2>
+// --- Header ---
+function renderHeader(){
+  const p=S.profile;
+  // Determine which theme icon to show
+  let themeIcon='system';
+  if(S.theme==='light')themeIcon='moon';
+  else if(S.theme==='dark')themeIcon='sun';
+  // If system, show based on current effective mode
+  else themeIcon=getSystemDark()?'sun':'moon';
+
+  return`<header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 glass border-b border-gray-100 dark:border-slate-800 transition-colors">
+  <div class="flex items-center justify-between h-14 px-4 max-w-7xl mx-auto">
+    <button data-act="open-settings" class="flex items-center gap-2.5 btn-tap">
+      ${p.logo?`<img src="${p.logo}" class="w-8 h-8 rounded-lg object-cover"/>`:`<div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">${icS('steth',18)}</div>`}
+      <span class="text-base font-bold text-slate-900 dark:text-white hidden sm:block">${p.appName||'MedBill Pro'}</span>
+    </button>
+    <div class="flex items-center gap-1">
+      <button data-act="toggle-theme" class="w-9 h-9 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors btn-tap" title="Theme">${icS(themeIcon,18)}</button>
+      <button data-act="open-settings" class="w-9 h-9 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors btn-tap" title="Settings">${icS('gear',18)}</button>
     </div>
-    <button data-nav="new-invoice" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors btn-p">${I.plus}<span class="hidden sm:inline">New Invoice</span></button>
   </div></header>`;
 }
 
-// --- Dashboard ---
-function rDash(){
-  const act=S.invoices.filter(i=>!i.archived);
-  const arv=S.invoices.filter(i=>i.archived);
-  const totRev=act.reduce((s,i)=>s+i.grandTotal,0);
-  const now=new Date();
-  const mInv=act.filter(i=>{const d=new Date(i.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
-  const mRev=mInv.reduce((s,i)=>s+i.grandTotal,0);
-  const recent=[...act].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5);
+function renderContent(){if(S.tab==='dashboard')return renderDashboard();return renderPatients()}
 
-  const cards=[
-    {l:'Total Revenue',v:fc(totRev),ic:I.dollar,c:'emerald',dl:0},
-    {l:'Total Invoices',v:act.length,ic:I.fchk,c:'blue',dl:80},
-    {l:'This Month',v:fc(mRev),ic:I.cal,c:'violet',dl:160},
-    {l:'Archived',v:arv.length,ic:I.abox,c:'amber',dl:240}
+// --- Dashboard with Section Animations ---
+function renderDashboard(){
+  const invs=S.invoices;const totalRev=invs.reduce((s,i)=>s+i.totalPayable,0);
+  const todayInvs=invs.filter(i=>i.date===today());const todayRev=todayInvs.reduce((s,i)=>s+i.totalPayable,0);
+  const totalDue=invs.reduce((s,i)=>s+Math.max(0,i.totalPayable-(i.cashReceived||0)),0);
+  const recent=[...invs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,6);
+  const days=[];const revs=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];days.push(d.toLocaleDateString('en-GB',{weekday:'short'}));revs.push(invs.filter(x=>x.date===ds).reduce((s,x)=>s+x.totalPayable,0))}
+  const maxRev=Math.max(...revs,1);
+  const stats=[
+    {label:'Total Revenue',value:fc(totalRev),icon:'dollar',bg:'bg-emerald-50 dark:bg-emerald-900/30',ic:'bg-emerald-100 dark:bg-emerald-800/50 text-emerald-600 dark:text-emerald-400'},
+    {label:'Total Patients',value:invs.length,icon:'user',bg:'bg-blue-50 dark:bg-blue-900/30',ic:'bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400'},
+    {label:"Today's Revenue",value:fc(todayRev),icon:'cal',bg:'bg-violet-50 dark:bg-violet-900/30',ic:'bg-violet-100 dark:bg-violet-800/50 text-violet-600 dark:text-violet-400'},
+    {label:'Total Due',value:fc(totalDue),icon:'award',bg:'bg-amber-50 dark:bg-amber-900/30',ic:'bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-400'},
   ];
-  const cm={emerald:{ic:'bg-emerald-100 text-emerald-600'},blue:{ic:'bg-blue-100 text-blue-600'},violet:{ic:'bg-violet-100 text-violet-600'},amber:{ic:'bg-amber-100 text-amber-600'}};
 
-  return`${rTop('Dashboard')}
-  <div class="p-4 lg:p-8 v-enter">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8">
-      ${cards.map((c,i)=>`<div class="c-enter bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300" style="animation-delay:${c.dl}ms">
-        <div class="flex items-start justify-between mb-4">
-          <div class="w-11 h-11 rounded-xl ${cm[c.c].ic} flex items-center justify-center">${c.ic}</div>
-          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${c.l}</span>
-        </div>
-        <div class="text-2xl font-bold text-slate-900 tracking-tight">${c.v}</div>
+  return`<main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Stats Cards Section -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+      ${stats.map((s,i)=>`<div class="section-reveal ${s.bg} rounded-2xl p-4 lg:p-5 border border-gray-100 dark:border-slate-800" style="animation-delay:${200+i*100}ms">
+        <div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl ${s.ic} flex items-center justify-center">${icS(s.icon,20)}</div></div>
+        <p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">${s.value}</p>
+        <p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">${s.label}</p>
       </div>`).join('')}
     </div>
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-      <div class="xl:col-span-2 bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-50">
-          <h3 class="font-semibold text-slate-900">Recent Invoices</h3>
-          <button data-nav="history" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">View All</button>
-        </div>
-        ${recent.length===0?`<div class="p-12 text-center">
-          <div class="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4 text-slate-300">${I.file}</div>
-          <p class="text-slate-400 text-sm mb-4">No invoices yet. Create your first one.</p>
-          <button data-nav="new-invoice" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-lg btn-p">${I.plus} Create Invoice</button>
-        </div>`:`<div class="divide-y divide-gray-50">${recent.map(inv=>`
-          <div class="flex items-center justify-between px-6 py-3.5 hover:bg-gray-50/50 transition-colors cursor-pointer" data-act="view-inv" data-id="${inv.id}">
-            <div class="flex items-center gap-4">
-              <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">${inv.invoiceNumber.slice(-4)}</div>
-              <div><p class="text-sm font-semibold text-slate-800">${inv.customerName}</p><p class="text-xs text-slate-400">${fd(inv.date)} &middot; ${inv.items.length} item${inv.items.length>1?'s':''}</p></div>
-            </div>
-            <div class="text-right"><p class="text-sm font-bold text-slate-900">${fc(inv.grandTotal)}</p><p class="text-[11px] text-slate-400">${inv.invoiceNumber}</p></div>
-          </div>`).join('')}</div>`}
+
+    <!-- Chart + Recent Section -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div class="section-reveal lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:600ms">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Revenue — Last 7 Days</h3>
+        <div class="flex items-end gap-2 h-36">${days.map((d,i)=>{const h=Math.max(4,(revs[i]/maxRev)*100);return`<div class="flex-1 flex flex-col items-center gap-1"><span class="text-[10px] font-semibold text-slate-400 dark:text-slate-500">${revs[i]>0?fc(revs[i]):''}</span><div class="w-full rounded-t-lg transition-all duration-500 ${revs[i]>0?'bg-emerald-500 dark:bg-emerald-600':'bg-gray-200 dark:bg-slate-700'}" style="height:${h}%"></div><span class="text-[10px] font-medium text-slate-400 dark:text-slate-500">${d}</span></div>`}).join('')}</div>
       </div>
-      <div class="space-y-4">
-        <div class="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 class="font-semibold text-slate-900 mb-4">Quick Actions</h3>
-          <div class="space-y-2">
-            <button data-nav="new-invoice" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold btn-p">${I.plus} New Invoice</button>
-            <button data-act="exp-all-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.dl} Export All Data</button>
-            <button data-act="imp-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.ul} Import Records</button>
-          </div>
-        </div>
-        <div class="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white">
-          <div class="flex items-center gap-3 mb-3">
-            ${S.profile.logo?`<img src="${S.profile.logo}" class="w-10 h-10 rounded-lg object-cover" alt=""/>`:`<div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center">${I.steth}</div>`}
-            <div><p class="text-sm font-bold">${S.profile.chamberName||'Your Chamber'}</p><p class="text-[11px] text-slate-400">${S.profile.doctorName}</p></div>
-          </div>
-          <p class="text-xs text-slate-400 mb-3">${S.profile.address}</p>
-          <button data-nav="settings" class="text-xs text-emerald-400 hover:text-emerald-300 font-medium">Edit Profile &rarr;</button>
-        </div>
+      <div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden" style="animation-delay:750ms">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-50 dark:border-slate-800"><h3 class="text-sm font-bold text-slate-900 dark:text-white">Recent</h3><button data-tab="patients" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">View All</button></div>
+        ${recent.length===0?`<div class="p-8 text-center"><p class="text-sm text-slate-400">No invoices yet</p></div>`:`<div class="divide-y divide-gray-50 dark:divide-slate-800">${recent.map(inv=>`<div class="flex items-center justify-between px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors" data-act="view-inv" data-id="${inv.id}"><div><p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${inv.patientName}</p><p class="text-[11px] text-slate-400">${inv.invoiceNumber} &middot; ${fd(inv.date)}</p></div><span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">${fc(inv.totalPayable)}</span></div>`).join('')}</div>`}
       </div>
     </div>
-  </div>`;
-}
 
-// --- Item Row ---
-function rItemRow(item,idx){
-  const tot=calcRow(item.quantity||0,item.price||0,item.discount||0,item.tax||0);
-  return`<div class="item-row bg-gray-50/80 rounded-xl p-3 sm:p-4 border border-gray-100 hover:border-gray-200 transition-colors" data-idx="${idx}">
-    <div class="grid grid-cols-12 gap-2 items-center">
-      <div class="col-span-12 sm:col-span-4"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Item</label><input type="text" data-f="name" value="${item.name||''}" placeholder="Medicine / Service" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white"/></div>
-      <div class="col-span-4 sm:col-span-1"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Qty</label><input type="number" data-f="quantity" value="${item.quantity||1}" min="1" step="1" class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-center"/></div>
-      <div class="col-span-4 sm:col-span-2"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Price</label><input type="number" data-f="price" value="${item.price||0}" min="0" step="0.01" class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-right"/></div>
-      <div class="col-span-2 sm:col-span-1"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Disc%</label><input type="number" data-f="discount" value="${item.discount||0}" min="0" max="100" step="0.1" class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-center"/></div>
-      <div class="col-span-2 sm:col-span-1"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Tax%</label><input type="number" data-f="tax" value="${item.tax||0}" min="0" max="100" step="0.1" class="w-full px-2 py-2 text-sm border border-gray-200 rounded-lg bg-white text-center"/></div>
-      <div class="col-span-8 sm:col-span-2 text-right"><label class="sm:hidden text-[10px] font-bold text-slate-400 uppercase mb-1 block">Total</label><span class="rtot text-sm font-bold text-slate-800">${fc(tot)}</span></div>
-      <div class="col-span-4 sm:col-span-1 flex justify-end"><button data-act="rm-item" data-idx="${idx}" class="p-1.5 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors btn-p" title="Remove">${I.trash}</button></div>
+    <!-- Bottom Stats Section -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+      <div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:900ms"><div class="flex items-center gap-3 mb-2">${icS('pill',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Top Medicines</span></div>${getTopMeds().map(m=>`<div class="flex justify-between text-xs py-1"><span class="text-slate-500 dark:text-slate-400">${m.name}</span><span class="font-semibold text-slate-700 dark:text-slate-300">${m.count}x</span></div>`).join('')||'<p class="text-xs text-slate-400">No data</p>'}</div>
+      <div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:1000ms"><div class="flex items-center gap-3 mb-2">${icS('cal',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Today's Summary</span></div><div class="space-y-1.5"><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Invoices</span><span class="font-semibold text-slate-700 dark:text-slate-300">${todayInvs.length}</span></div><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Revenue</span><span class="font-semibold text-emerald-600">${fc(todayRev)}</span></div></div></div>
+      <div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:1100ms"><div class="flex items-center gap-3 mb-2">${icS('dollar',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Payment Status</span></div><div class="space-y-1.5"><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Total Billed</span><span class="font-semibold text-slate-700 dark:text-slate-300">${fc(totalRev)}</span></div><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Due</span><span class="font-semibold text-red-500">${fc(totalDue)}</span></div></div></div>
     </div>
-  </div>`;
+  </main>`;
 }
 
-// --- New Invoice ---
-function rNewInv(){
+function getTopMeds(){const m={};S.invoices.forEach(inv=>inv.items.forEach(it=>{if(it.name){m[it.name]=(m[it.name]||0)+it.quantity}}));return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count}))}
+
+// --- Patients ---
+function renderPatients(){
+  let invs=[...S.invoices].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if(S.search){const q=S.search.toLowerCase();invs=invs.filter(i=>i.patientName?.toLowerCase().includes(q)||i.patientMobile?.includes(q)||i.patientEmail?.toLowerCase().includes(q)||i.patientAddress?.toLowerCase().includes(q)||i.invoiceNumber?.toLowerCase().includes(q))}
+  if(S.filter==='today')invs=invs.filter(i=>i.date===today());
+  else if(S.filter==='due')invs=invs.filter(i=>(i.totalPayable-(i.cashReceived||0))>0);
+  else if(S.filter==='paid')invs=invs.filter(i=>(i.totalPayable-(i.cashReceived||0))<=0);
+
+  return`<main class="max-w-7xl mx-auto px-4 py-6 anim-fade">
+    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+      <div class="relative flex-1"><span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">${icS('search',15)}</span><input id="p-search" type="text" value="${S.search}" placeholder="Search by name, phone, email, address..." class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-white"/></div>
+      <select id="p-filter" class="px-3 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-white min-w-[120px]"><option value="all" ${S.filter==='all'?'selected':''}>All</option><option value="today" ${S.filter==='today'?'selected':''}>Today</option><option value="paid" ${S.filter==='paid'?'selected':''}>Paid</option><option value="due" ${S.filter==='due'?'selected':''}>Due</option></select>
+    </div>
+    ${invs.length===0?`<div class="text-center py-20 section-reveal" style="animation-delay:200ms"><div class="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">${icS('user',36)}</div><p class="text-slate-400 dark:text-slate-500 text-sm mb-1">${S.search?'No results found':'No patients yet'}</p><p class="text-slate-300 dark:text-slate-600 text-xs">${S.search?'Try different search terms':'Tap + to create your first invoice'}</p></div>`:
+    `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${invs.map((inv,i)=>{const due=Math.max(0,inv.totalPayable-(inv.cashReceived||0));const isPaid=due<=0;return`<div class="section-reveal card-hover bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden" style="animation-delay:${150+i*60}ms"><div class="p-4 pb-3"><div class="flex items-start justify-between mb-3"><div class="flex items-center gap-3"><div class="w-11 h-11 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">${(inv.patientName||'?').charAt(0).toUpperCase()}</div><div><p class="text-sm font-bold text-slate-900 dark:text-white leading-tight">${inv.patientName||'—'}</p><p class="text-[11px] text-slate-400 font-medium">${inv.invoiceNumber}</p></div></div><span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid?'bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400':'bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400'}">${isPaid?'PAID':'DUE'}</span></div><div class="space-y-1.5 mb-3">${inv.patientMobile?`<div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">${icS('phone',12)}<span>${inv.patientMobile}</span></div>`:''}${inv.patientEmail?`<div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">${icS('mail',12)}<span class="truncate">${inv.patientEmail}</span></div>`:''}</div><div class="flex items-center justify-between pt-2.5 border-t border-gray-50 dark:border-slate-800"><div><p class="text-base font-bold text-slate-900 dark:text-white">${fc(inv.totalPayable)}</p><p class="text-[10px] text-slate-400">${fd(inv.date)}</p></div>${!isPaid?`<span class="text-xs font-semibold text-red-500">Due: ${fc(due)}</span>`:''}</div></div><div class="flex border-t border-gray-100 dark:border-slate-800"><button data-act="share-wa" data-id="${inv.id}" class="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-semibold text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 btn-tap">${icS('wa',14)}WhatsApp</button><button data-act="exp-pdf" data-id="${inv.id}" class="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 btn-tap border-l border-gray-100 dark:border-slate-800">${icS('pdf',14)}PDF</button><button data-act="exp-img" data-id="${inv.id}" class="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-semibold text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 btn-tap border-l border-gray-100 dark:border-slate-800">${icS('img',14)}Image</button><button data-act="edit-inv" data-id="${inv.id}" class="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-semibold text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 btn-tap border-l border-gray-100 dark:border-slate-800">${icS('edit',14)}Edit</button><button data-act="del-inv" data-id="${inv.id}" class="flex-1 flex items-center justify-center gap-1 py-2.5 text-[11px] font-semibold text-slate-400 hover:bg-red-50 hover:text-red-500 btn-tap border-l border-gray-100 dark:border-slate-800">${icS('trash',14)}</button></div></div>`}).join('')}</div>`}
+  </main>`;
+}
+
+// --- Bottom Nav with Ripple FAB ---
+function renderBottomNav(){
+  const isDash=S.tab==='dashboard';const isPat=S.tab==='patients';
+  return`<nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 glass border-t border-gray-200 dark:border-slate-800 transition-colors" style="padding-bottom:env(safe-area-inset-bottom)">
+  <div class="flex items-end justify-around h-16 max-w-xl mx-auto relative">
+    <button data-tab="dashboard" class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 btn-tap transition-colors ${isDash?'text-emerald-600 dark:text-emerald-400':'text-slate-400 dark:text-slate-500'}">
+      ${icS('dash',22)}<span class="text-[10px] font-semibold">Dashboard</span>
+    </button>
+    <div class="flex flex-col items-center justify-end flex-1 h-full">
+      <button data-act="new-inv" class="ripple-host relative -top-5 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-600/30 flex items-center justify-center border-4 border-white dark:border-slate-900 transition-transform active:scale-90 anim-pulse">
+        ${icS('plus',28)}
+      </button>
+    </div>
+    <button data-tab="patients" class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 btn-tap transition-colors ${isPat?'text-emerald-600 dark:text-emerald-400':'text-slate-400 dark:text-slate-500'}">
+      ${icS('list',22)}<span class="text-[10px] font-semibold">Patients</span>
+    </button>
+  </div></nav>`;
+}
+
+// --- Invoice Form Modal ---
+function renderInvoiceModal(){
   const ed=S.editId?S.invoices.find(i=>i.id===S.editId):null;
-  const items=ed?ed.items:[{name:'',quantity:1,price:0,discount:0,tax:0}];
-  return`${rTop(ed?'Edit Invoice':'New Invoice')}
-  <div class="p-4 lg:p-8 v-enter">
-    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
-      <div class="xl:col-span-3 space-y-6">
-        <div class="bg-white rounded-2xl border border-gray-100 p-6">
-          <h3 class="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2"><span class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">1</span>Customer Information</h3>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Customer Name *</label><input id="i-cust" type="text" value="${ed?ed.customerName:''}" placeholder="Enter customer name" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-            <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Phone Number</label><input id="i-phone" type="text" value="${ed?ed.customerPhone||'':''}" placeholder="+880 1XXX-XXXXXX" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-            <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Invoice Date</label><input id="i-date" type="date" value="${ed?ed.date:today()}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-            <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Invoice Number</label><input id="i-num" type="text" value="${ed?ed.invoiceNumber:'INV-'+S.nextNum}" readonly class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-100 text-slate-500 cursor-not-allowed"/></div>
+  const items=ed?ed.items:[{name:'',quantity:1,unitPrice:0}];
+  return`<div class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-slate-900 anim-slide-up" id="inv-modal">
+    <div class="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0">
+      <h2 class="text-base font-bold text-slate-900 dark:text-white">${ed?'Edit Invoice':'New Invoice'}</h2>
+      <button data-act="close-inv" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">${icS('x',20)}</button>
+    </div>
+    <div class="flex-1 overflow-y-auto">
+      <div class="max-w-2xl mx-auto p-4 space-y-5">
+        <section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4">
+          <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('user',15)}Patient Information</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Patient Name *</label><input id="i-pname" type="text" value="${ed?ed.patientName:''}" placeholder="Full name" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Address</label><input id="i-paddr" type="text" value="${ed?ed.patientAddress||'':''}" placeholder="Address" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Mobile Number</label><input id="i-pmob" type="text" value="${ed?ed.patientMobile||'':''}" placeholder="+880 1XXX-XXXXXX" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Email Address</label><input id="i-pemail" type="email" value="${ed?ed.patientEmail||'':''}" placeholder="email@example.com" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reward Point</label><input id="i-reward" type="number" value="${ed?ed.rewardPoint||0:0}" min="0" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
           </div>
-        </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold text-slate-900 flex items-center gap-2"><span class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">2</span>Items / Services</h3>
-            <button data-act="add-item" class="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 text-xs font-semibold btn-p">${I.plus} Add Item</button>
+        </section>
+        <section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4">
+          <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('note',15)}Invoice Details</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Invoice No.</label><input id="i-invnum" type="text" value="${ed?ed.invoiceNumber:'INV-'+String(S.nextNum).padStart(4,'0')}" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label><input id="i-date" type="date" value="${ed?ed.date:today()}" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Time</label><input id="i-time" type="time" value="${ed?ed.time||'':nowTime()}" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
           </div>
-          <div class="hidden sm:grid grid-cols-12 gap-2 mb-2 px-1">
-            <div class="col-span-4 text-[10px] font-bold text-slate-400 uppercase">Item Name</div>
-            <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase">Qty</div>
-            <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase">Price</div>
-            <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase">Disc%</div>
-            <div class="col-span-1 text-[10px] font-bold text-slate-400 uppercase">Tax%</div>
-            <div class="col-span-2 text-[10px] font-bold text-slate-400 uppercase text-right">Total</div>
-            <div class="col-span-1"></div>
-          </div>
+          <div class="mt-3"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Notes</label><textarea id="i-notes" rows="2" placeholder="Additional notes..." class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white resize-none">${ed?ed.notes||'':''}</textarea></div>
+        </section>
+        <section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3"><h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">${icS('pill',15)}Products / Medicines</h3><button data-act="add-row" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 btn-tap">${icS('plus',14)}Add</button></div>
+          <!-- Horizontal Scrollable Item Rows -->
           <div id="items-box" class="space-y-2">${items.map((it,i)=>rItemRow(it,i)).join('')}</div>
-          <button data-act="add-item" class="mt-4 w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-slate-400 hover:text-emerald-600 hover:border-emerald-300 transition-all btn-p">${I.plus} Add Another Item</button>
-        </div>
-        <div class="bg-white rounded-2xl border border-gray-100 p-6">
-          <label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">Notes</label>
-          <textarea id="i-notes" rows="2" placeholder="Additional notes..." class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50 resize-none">${ed?ed.notes||'':''}</textarea>
-        </div>
-      </div>
-      <div class="xl:col-span-2">
-        <div class="sticky top-20 space-y-4">
-          <div class="bg-white rounded-2xl border border-gray-100 p-6">
-            <h3 class="text-sm font-semibold text-slate-900 mb-5">Invoice Summary</h3>
-            <div class="space-y-3">
-              <div class="flex justify-between text-sm"><span class="text-slate-500">Subtotal</span><span id="s-sub" class="font-semibold text-slate-700">${fc(0)}</span></div>
-              <div class="flex justify-between text-sm"><span class="text-slate-500">Discount</span><span id="s-disc" class="font-semibold text-red-500">-${fc(0)}</span></div>
-              <div class="flex justify-between text-sm"><span class="text-slate-500">Tax / VAT</span><span id="s-tax" class="font-semibold text-slate-700">${fc(0)}</span></div>
-              <div class="border-t border-gray-100 pt-3"><div class="flex justify-between"><span class="text-base font-bold text-slate-900">Grand Total</span><span id="s-grand" class="text-xl font-bold text-emerald-600">${fc(0)}</span></div></div>
-            </div>
+          <button data-act="add-row" class="mt-3 w-full py-2.5 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-xs text-slate-400 hover:text-emerald-600 hover:border-emerald-300 transition-all btn-tap">${icS('plus',14)} Add Item</button>
+        </section>
+        <section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4">
+          <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('steth',15)}Doctor Fee</h3>
+          <div class="max-w-xs"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Doctor Visit Fee</label><input id="i-docfee" type="number" value="${ed?ed.doctorFee||0:0}" min="0" step="1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+        </section>
+        <section class="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-800/40">
+          <h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-3">Invoice Summary</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Items</span><span id="sum-items" class="font-semibold text-slate-700 dark:text-slate-300">0</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Quantity</span><span id="sum-qty" class="font-semibold text-slate-700 dark:text-slate-300">0</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Products Subtotal</span><span id="sum-psub" class="font-semibold text-slate-700 dark:text-slate-300">${fc(0)}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Doctor Fee</span><span id="sum-dfee" class="font-semibold text-slate-700 dark:text-slate-300">${fc(0)}</span></div>
+            <div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400">Discount (–)</span><input id="i-disc" type="number" value="${ed?ed.discount||0:0}" min="0" step="1" class="w-28 px-2 py-1 text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div class="border-t border-emerald-200 dark:border-emerald-800/40 pt-2 flex justify-between"><span class="font-bold text-emerald-800 dark:text-emerald-300">TOTAL PAYABLE</span><span id="sum-total" class="text-lg font-black text-emerald-700 dark:text-emerald-400">${fc(0)}</span></div>
           </div>
-          <button data-act="save-inv" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-xl btn-p shadow-lg shadow-emerald-600/20">${I.chk} ${ed?'Update Invoice':'Save Invoice'}</button>
-          ${ed?`<button data-act="cancel-edit" class="w-full flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 text-slate-600 font-medium py-3 rounded-xl btn-p">Cancel Editing</button>`:''}
-        </div>
-      </div>
-    </div>
-  </div>`;
-}
-
-// --- History ---
-function rHist(){
-  let invs=[...S.invoices];
-  if(S.search){const q=S.search.toLowerCase();invs=invs.filter(i=>i.customerName.toLowerCase().includes(q)||i.invoiceNumber.toLowerCase().includes(q)||(i.customerPhone&&i.customerPhone.includes(q)))}
-  if(S.filter==='active')invs=invs.filter(i=>!i.archived);
-  else if(S.filter==='archived')invs=invs.filter(i=>i.archived);
-  if(S.sort==='date-desc')invs.sort((a,b)=>new Date(b.date)-new Date(a.date));
-  else if(S.sort==='date-asc')invs.sort((a,b)=>new Date(a.date)-new Date(b.date));
-  else if(S.sort==='amt-desc')invs.sort((a,b)=>b.grandTotal-a.grandTotal);
-  else if(S.sort==='amt-asc')invs.sort((a,b)=>a.grandTotal-b.grandTotal);
-
-  return`${rTop('Invoice History')}
-  <div class="p-4 lg:p-8 v-enter">
-    <div class="bg-white rounded-2xl border border-gray-100 p-4 mb-6">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1"><span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">${I.search}</span><input id="h-search" type="text" value="${S.search}" placeholder="Search by name, invoice number, or phone..." class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-        <div class="flex gap-2">
-          <select id="h-filter" class="px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50 min-w-[120px]">
-            <option value="all" ${S.filter==='all'?'selected':''}>All Status</option>
-            <option value="active" ${S.filter==='active'?'selected':''}>Active</option>
-            <option value="archived" ${S.filter==='archived'?'selected':''}>Archived</option>
-          </select>
-          <select id="h-sort" class="px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50 min-w-[140px]">
-            <option value="date-desc" ${S.sort==='date-desc'?'selected':''}>Newest First</option>
-            <option value="date-asc" ${S.sort==='date-asc'?'selected':''}>Oldest First</option>
-            <option value="amt-desc" ${S.sort==='amt-desc'?'selected':''}>Highest Amount</option>
-            <option value="amt-asc" ${S.sort==='amt-asc'?'selected':''}>Lowest Amount</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    ${invs.length===0?`<div class="bg-white rounded-2xl border border-gray-100 p-16 text-center">
-      <div class="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4 text-slate-300">${I.file}</div>
-      <p class="text-slate-400 text-sm mb-1">No invoices found</p>
-      <p class="text-slate-300 text-xs">${S.search?'Try adjusting your search':'Create your first invoice'}</p>
-    </div>`:`<div class="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-      <div class="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50/80 border-b border-gray-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-        <div class="col-span-2">Invoice</div><div class="col-span-3">Customer</div><div class="col-span-2">Date</div><div class="col-span-1">Items</div><div class="col-span-2 text-right">Amount</div><div class="col-span-2 text-right">Actions</div>
-      </div>
-      <div class="divide-y divide-gray-50">${invs.map(inv=>`
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-2 md:gap-4 px-6 py-4 hover:bg-gray-50/50 transition-colors items-center">
-          <div class="md:col-span-2"><span class="inline-flex items-center gap-1.5 text-sm font-bold text-slate-800">${inv.archived?'<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>':'<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-dot"></span>'}${inv.invoiceNumber}</span></div>
-          <div class="md:col-span-3"><p class="text-sm font-medium text-slate-700">${inv.customerName}</p><p class="text-xs text-slate-400">${inv.customerPhone||'—'}</p></div>
-          <div class="md:col-span-2 text-sm text-slate-500">${fd(inv.date)}</div>
-          <div class="md:col-span-1 text-sm text-slate-500">${inv.items.length}</div>
-          <div class="md:col-span-2 text-right"><span class="text-sm font-bold text-slate-900">${fc(inv.grandTotal)}</span>${inv.archived?'<span class="ml-1 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-semibold">Archived</span>':''}</div>
-          <div class="md:col-span-2 flex justify-end gap-1">
-            <button data-act="view-inv" data-id="${inv.id}" title="View" class="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 btn-p">${I.eye}</button>
-            <button data-act="edit-inv" data-id="${inv.id}" title="Edit" class="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 btn-p">${I.edit}</button>
-            <button data-act="${inv.archived?'unarch':'arch'}-inv" data-id="${inv.id}" title="${inv.archived?'Unarchive':'Archive'}" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 btn-p">${inv.archived?I.unarch:I.arch}</button>
-            <button data-act="del-inv" data-id="${inv.id}" title="Delete" class="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 btn-p">${I.trash}</button>
+          <div class="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800/40 space-y-2 text-sm">
+            <div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400">Cash / Payment Received</span><input id="i-cash" type="number" value="${ed?ed.cashReceived||0:0}" min="0" step="1" class="w-28 px-2 py-1 text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Paid</span><span id="sum-paid" class="font-semibold text-emerald-600 dark:text-emerald-400">${fc(0)}</span></div>
+            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Due</span><span id="sum-due" class="font-semibold text-red-500">${fc(0)}</span></div>
           </div>
-        </div>`).join('')}
-      </div>
-    </div>`}
-  </div>`;
-}
-
-// --- Invoice Template ---
-function rInvTmpl(inv){
-  const p=S.profile;
-  return`<div style="font-family:'Inter',sans-serif;padding:40px;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;">
-      <div style="display:flex;align-items:center;gap:16px;">
-        ${p.logo?`<img src="${p.logo}" style="width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid #e2e8f0"/>`:`<div style="width:56px;height:56px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:white;font-size:24px;font-weight:bold;">M</div>`}
-        <div><h2 style="font-size:18px;font-weight:800;color:#0f172a;margin:0;">${p.chamberName||'Chamber Name'}</h2><p style="font-size:12px;color:#64748b;margin:2px 0 0;">${p.address||'Address'}</p><p style="font-size:12px;color:#64748b;margin:0;">${p.contact||'Contact'}</p></div>
-      </div>
-      <div style="text-align:right;"><h1 style="font-size:28px;font-weight:900;color:#0f172a;margin:0;letter-spacing:-1px;">INVOICE</h1><p style="font-size:14px;font-weight:700;color:#059669;margin:4px 0 0;">${inv.invoiceNumber}</p><p style="font-size:12px;color:#94a3b8;margin:4px 0 0;">${fd(inv.date)}</p></div>
-    </div>
-    <div style="background:#f8fafc;border-radius:12px;padding:16px;margin-bottom:24px;">
-      <p style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin:0 0 4px;">Bill To</p>
-      <p style="font-size:14px;font-weight:700;color:#1e293b;margin:0;">${inv.customerName}</p>
-      ${inv.customerPhone?`<p style="font-size:12px;color:#64748b;margin:2px 0 0;">${inv.customerPhone}</p>`:''}
-    </div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
-      <thead><tr style="border-bottom:2px solid #e2e8f0;">
-        <th style="text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">#</th>
-        <th style="text-align:left;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">Item</th>
-        <th style="text-align:center;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">Qty</th>
-        <th style="text-align:right;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">Price</th>
-        <th style="text-align:center;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">Disc</th>
-        <th style="text-align:center;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 8px 8px 0;">Tax</th>
-        <th style="text-align:right;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 0 8px 0;">Total</th>
-      </tr></thead>
-      <tbody>${inv.items.map((it,idx)=>{const rt=calcRow(it.quantity,it.price,it.discount,it.tax);return`<tr style="border-bottom:1px solid #f1f5f9;">
-        <td style="padding:10px 8px 10px 0;font-size:12px;color:#94a3b8;">${idx+1}</td>
-        <td style="padding:10px 8px 10px 0;font-size:13px;font-weight:600;color:#1e293b;">${it.name}</td>
-        <td style="padding:10px 8px;font-size:13px;color:#475569;text-align:center;">${it.quantity}</td>
-        <td style="padding:10px 8px;font-size:13px;color:#475569;text-align:right;">${fc(it.price)}</td>
-        <td style="padding:10px 8px;font-size:11px;color:#94a3b8;text-align:center;">${it.discount>0?it.discount+'%':'—'}</td>
-        <td style="padding:10px 8px;font-size:11px;color:#94a3b8;text-align:center;">${it.tax>0?it.tax+'%':'—'}</td>
-        <td style="padding:10px 0;font-size:13px;font-weight:700;color:#1e293b;text-align:right;">${fc(rt)}</td>
-      </tr>`}).join('')}</tbody>
-    </table>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:32px;">
-      <div style="width:250px;">
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:#64748b;">Subtotal</span><span style="font-weight:600;color:#334155;">${fc(inv.subtotal)}</span></div>
-        ${inv.totalDiscount>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:#64748b;">Discount</span><span style="font-weight:600;color:#ef4444;">-${fc(inv.totalDiscount)}</span></div>`:''}
-        ${inv.totalTax>0?`<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px;"><span style="color:#64748b;">Tax / VAT</span><span style="font-weight:600;color:#334155;">${fc(inv.totalTax)}</span></div>`:''}
-        <div style="border-top:2px solid #e2e8f0;padding-top:8px;display:flex;justify-content:space-between;"><span style="font-size:15px;font-weight:800;color:#0f172a;">Grand Total</span><span style="font-size:18px;font-weight:900;color:#059669;">${fc(inv.grandTotal)}</span></div>
-      </div>
-    </div>
-    ${inv.notes?`<div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:24px;"><p style="font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 4px;">Notes</p><p style="font-size:12px;color:#475569;margin:0;">${inv.notes}</p></div>`:''}
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #e2e8f0;padding-top:20px;">
-      <div><p style="font-size:12px;color:#94a3b8;margin:0;">Thank you for your visit!</p><p style="font-size:10px;color:#cbd5e1;margin:4px 0 0;">Generated by MedBill Pro</p></div>
-      <div style="text-align:center;"><div style="width:160px;border-bottom:1px solid #94a3b8;margin-bottom:4px;"></div><p style="font-size:12px;font-weight:600;color:#64748b;margin:0;">${p.doctorName||'Signature'}</p></div>
-    </div>
-  </div>`;
-}
-
-// --- Invoice Detail ---
-function rDetail(){
-  const inv=S.invoices.find(i=>i.id===S.detailId);
-  if(!inv){S.view='history';render();return ''}
-  return`${rTop('Invoice Details')}
-  <div class="p-4 lg:p-8 v-enter">
-    <div class="flex flex-wrap gap-2 mb-6">
-      <button data-act="back-hist" class="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 rounded-lg text-sm font-medium text-slate-600 btn-p">${I.left} Back</button>
-      <div class="flex-1"></div>
-      <button data-act="exp-pdf" data-id="${inv.id}" class="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold btn-p">${I.printer} PDF</button>
-      <button data-act="exp-img" data-id="${inv.id}" class="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-semibold btn-p">${I.img} Image</button>
-      <button data-act="share-wa" data-id="${inv.id}" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold btn-p">${I.wa} WhatsApp</button>
-      <button data-act="edit-inv" data-id="${inv.id}" class="flex items-center gap-2 px-4 py-2 border border-gray-200 hover:bg-gray-50 rounded-lg text-sm font-medium text-slate-600 btn-p">${I.edit} Edit</button>
-    </div>
-    <div class="flex justify-center"><div id="inv-preview" class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-[800px] overflow-hidden">${rInvTmpl(inv)}</div></div>
-  </div>`;
-}
-
-// --- Settings ---
-function rSettings(){
-  const p=S.profile;
-  return`${rTop('Settings')}
-  <div class="p-4 lg:p-8 v-enter">
-    <div class="max-w-2xl space-y-6">
-      <div class="bg-white rounded-2xl border border-gray-100 p-6">
-        <h3 class="text-sm font-semibold text-slate-900 mb-5 flex items-center gap-2"><span class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">1</span>Chamber / Pharmacy Profile</h3>
-        <div class="mb-5">
-          <label class="block text-[10px] font-bold text-slate-400 mb-2 uppercase tracking-wider">Logo</label>
-          <div class="flex items-center gap-4">
-            ${p.logo?`<img src="${p.logo}" class="w-16 h-16 rounded-xl object-cover border border-gray-200" alt=""/>`:`<div class="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-slate-300">${I.cam}</div>`}
-            <div><button data-act="upload-logo" class="text-sm font-medium text-emerald-600 hover:text-emerald-700">Upload Logo</button>${p.logo?`<button data-act="rm-logo" class="block text-xs text-red-500 hover:text-red-600 mt-1">Remove</button>`:''}</div>
-          </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="sm:col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Chamber / Pharmacy Name</label><input id="s-ch" type="text" value="${p.chamberName}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-          <div class="sm:col-span-2"><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Address</label><input id="s-addr" type="text" value="${p.address}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Contact</label><input id="s-cont" type="text" value="${p.contact}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Doctor Name</label><input id="s-doc" type="text" value="${p.doctorName}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Currency Code</label><input id="s-cur" type="text" value="${p.currency}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-          <div><label class="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Currency Symbol</label><input id="s-sym" type="text" value="${p.sym}" class="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50/50"/></div>
-        </div>
-        <button data-act="save-set" class="mt-5 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2.5 rounded-lg btn-p">${I.chk} Save Profile</button>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-100 p-6">
-        <h3 class="text-sm font-semibold text-slate-900 mb-5 flex items-center gap-2"><span class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold">2</span>Data Management</h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button data-act="exp-all-json" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.dl} Export JSON</button>
-          <button data-act="exp-all-xls" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.xls} Export Excel</button>
-          <button data-act="exp-all-csv" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.csv} Export CSV</button>
-          <button data-act="imp-json" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-slate-700 text-sm font-medium btn-p">${I.ul} Import JSON</button>
-        </div>
-        <div class="mt-4 pt-4 border-t border-gray-100">
-          <button data-act="clear-all" class="flex items-center gap-2 text-red-600 hover:text-red-700 text-sm font-medium btn-p">${I.trash} Clear All Data</button>
+        </section>
+        <div class="grid grid-cols-2 gap-3 pb-6">
+          <button data-act="save-inv" class="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 btn-tap transition-colors">${icS('save',18)}Save Invoice</button>
+          <button data-act="clear-inv" class="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold text-sm btn-tap transition-colors">${icS('refresh',18)}Clear & New</button>
         </div>
       </div>
     </div>
   </div>`;
 }
 
-// --- Main Render ---
-function render(){
-  const app=document.getElementById('app');
-  let content='';
-  switch(S.view){
-    case 'dashboard':content=rDash();break;
-    case 'new-invoice':content=rNewInv();break;
-    case 'history':content=rHist();break;
-    case 'invoice-detail':content=rDetail();break;
-    case 'settings':content=rSettings();break;
-    default:content=rDash();
+// --- Horizontal Scrollable Item Row ---
+function rItemRow(item,idx){
+  const sub=(item.quantity||0)*(item.unitPrice||0);
+  return`<div class="item-row bg-white dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 overflow-hidden" data-idx="${idx}">
+  <div class="items-scroll p-2.5">
+    <div class="item-row-flex">
+      <div class="flex-shrink-0 w-8 text-center"><span class="text-xs font-bold text-slate-400">${idx+1}</span></div>
+      <div class="flex-shrink-0 w-[180px]"><input type="text" data-f="name" value="${item.name||''}" placeholder="Product/Medicine" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"/></div>
+      <div class="flex-shrink-0 w-[70px]"><input type="number" data-f="quantity" value="${item.quantity||1}" min="1" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white text-center" placeholder="Qty"/></div>
+      <div class="flex-shrink-0 w-[100px]"><input type="number" data-f="unitPrice" value="${item.unitPrice||0}" min="0" step="0.01" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-gray-50 dark:bg-slate-700 dark:text-white text-right" placeholder="Unit Price"/></div>
+      <div class="flex-shrink-0 w-[100px] flex items-center justify-end"><span class="rsub text-sm font-bold text-slate-700 dark:text-slate-300">${fc(sub)}</span></div>
+      <div class="flex-shrink-0 w-8 flex items-center justify-center"><button data-act="rm-row" data-idx="${idx}" class="p-1 rounded text-slate-300 hover:text-red-500 transition-colors">${icS('x',14)}</button></div>
+    </div>
+  </div></div>`;
+}
+
+// --- View Invoice Modal ---
+function renderViewModal(){
+  const inv=S.invoices.find(i=>i.id===S.viewInvId);if(!inv){S.viewInvId=null;render();return''}
+  return`<div class="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-slate-950 anim-fade">
+    <div class="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0">
+      <button data-act="close-view" class="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 btn-tap">${icS('arrow',18)}Back</button>
+      <div class="flex gap-2"><button data-act="share-wa" data-id="${inv.id}" class="px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-semibold btn-tap flex items-center gap-1">${icS('wa',14)}WhatsApp</button><button data-act="exp-pdf" data-id="${inv.id}" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold btn-tap flex items-center gap-1">${icS('pdf',14)}PDF</button><button data-act="exp-img" data-id="${inv.id}" class="px-3 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold btn-tap flex items-center gap-1">${icS('img',14)}Image</button></div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 flex justify-center"><div class="w-full max-w-[800px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">${rInvHTML(inv)}</div></div>
+  </div>`;
+}
+
+// --- Invoice HTML Template ---
+function rInvHTML(inv){const p=S.profile;const due=Math.max(0,inv.totalPayable-(inv.cashReceived||0));return`<div style="padding:32px;font-family:'Inter',sans-serif;color:#1e293b;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;"><div style="display:flex;align-items:center;gap:14px;">${p.logo?`<img src="${p.logo}" style="width:52px;height:52px;border-radius:12px;object-fit:cover"/>`:`<div style="width:52px;height:52px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:20px;">M</div>`}<div><h2 style="font-size:16px;font-weight:800;margin:0;color:#0f172a;">${p.chamberName||'Chamber'}</h2><p style="font-size:11px;color:#64748b;margin:2px 0 0;">${p.address||''}</p><p style="font-size:11px;color:#64748b;margin:0;">${p.phone||''} ${p.email?'| '+p.email:''}</p></div></div><div style="text-align:right;"><h1 style="font-size:24px;font-weight:900;letter-spacing:-1px;color:#0f172a;margin:0;">INVOICE</h1><p style="font-size:13px;font-weight:700;color:#059669;margin:4px 0 0;">${inv.invoiceNumber}</p><p style="font-size:11px;color:#94a3b8;margin:2px 0 0;">${fd(inv.date)}${inv.time?' at '+inv.time:''}</p></div></div><div style="background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;"><div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Patient</p><p style="font-size:14px;font-weight:700;color:#1e293b;margin:0;">${inv.patientName||'—'}</p></div>${inv.patientMobile?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Mobile</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientMobile}</p></div>`:''}${inv.patientEmail?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Email</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientEmail}</p></div>`:''}${inv.patientAddress?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Address</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientAddress}</p></div>`:''}${inv.rewardPoint?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Reward Points</p><p style="font-size:13px;font-weight:600;color:#d97706;margin:0;">${inv.rewardPoint} pts</p></div>`:''}</div><table style="width:100%;border-collapse:collapse;margin-bottom:16px;"><thead><tr style="border-bottom:2px solid #e2e8f0;"><th style="text-align:left;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">SL</th><th style="text-align:left;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Product / Medicine</th><th style="text-align:center;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Qty</th><th style="text-align:right;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Unit Price</th><th style="text-align:right;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 0 6px;">Subtotal</th></tr></thead><tbody>${inv.items.map((it,i)=>`<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 6px 8px 0;font-size:12px;color:#94a3b8;">${i+1}</td><td style="padding:8px 6px;font-size:13px;font-weight:600;color:#1e293b;">${it.name||'—'}</td><td style="padding:8px 6px;font-size:13px;color:#475569;text-align:center;">${it.quantity}</td><td style="padding:8px 6px;font-size:13px;color:#475569;text-align:right;">${fc(it.unitPrice)}</td><td style="padding:8px 0;font-size:13px;font-weight:700;color:#1e293b;text-align:right;">${fc(it.quantity*it.unitPrice)}</td></tr>`).join('')}</tbody></table><div style="display:flex;justify-content:flex-end;margin-bottom:20px;"><div style="width:260px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Products Subtotal</span><span style="font-weight:600;color:#334155;">${fc(inv.productsSubtotal)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Doctor Fee</span><span style="font-weight:600;color:#334155;">${fc(inv.doctorFee)}</span></div>${inv.discount>0?`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Discount</span><span style="font-weight:600;color:#ef4444;">-${fc(inv.discount)}</span></div>`:''}<div style="border-top:2px solid #e2e8f0;padding-top:6px;display:flex;justify-content:space-between;"><span style="font-size:15px;font-weight:800;color:#0f172a;">TOTAL PAYABLE</span><span style="font-size:17px;font-weight:900;color:#059669;">${fc(inv.totalPayable)}</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">Cash Received</span><span style="font-weight:600;color:#334155;">${fc(inv.cashReceived||0)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:#64748b;">Due</span><span style="font-weight:700;color:${due>0?'#ef4444':'#059669'}">${fc(due)}</span></div></div></div></div>${inv.notes?`<div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:16px;"><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Notes</p><p style="font-size:12px;color:#475569;margin:0;">${inv.notes}</p></div>`:''}<div style="display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #e2e8f0;padding-top:16px;"><div><p style="font-size:11px;color:#94a3b8;margin:0;">Thank you for your visit!</p><p style="font-size:9px;color:#cbd5e1;margin:3px 0 0;">Generated by ${p.appName||'MedBill Pro'}</p></div><div style="text-align:center;">${p.signature?`<img src="${p.signature}" style="height:40px;margin-bottom:4px;object-fit:contain"/>`:`<div style="width:140px;border-bottom:1px solid #94a3b8;margin-bottom:4px;"></div>`}<p style="font-size:11px;font-weight:600;color:#64748b;margin:0;">${p.doctorName||''}</p>${p.doctorDegree?`<p style="font-size:9px;color:#94a3b8;margin:1px 0 0;">${p.doctorDegree}</p>`:''}</div></div></div>`}
+
+// --- Settings Modal ---
+function renderSettingsModal(){
+  const p=S.profile;const fields=[{key:'appName',label:'App Name',val:p.appName,icon:'gear'},{key:'chamberName',label:'Chamber / Pharmacy Name',val:p.chamberName,icon:'map'},{key:'address',label:'Address',val:p.address,icon:'map'},{key:'phone',label:'Phone Number',val:p.phone,icon:'phone'},{key:'email',label:'Email',val:p.email,icon:'mail'},{key:'doctorName',label:'Doctor Name',val:p.doctorName,icon:'user'},{key:'doctorDegree',label:'Doctor Degree',val:p.doctorDegree,icon:'award'},{key:'currency',label:'Currency Code',val:p.currency,icon:'dollar'},{key:'sym',label:'Currency Symbol',val:p.sym,icon:'dollar'}];
+  return`<div class="fixed inset-0 z-50 flex flex-col sm:flex-row bg-white dark:bg-slate-900 anim-slide-up" id="settings-modal">
+    <div class="hidden sm:flex flex-col w-64 bg-gray-50 dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 p-4 flex-shrink-0">
+      <div class="flex items-center justify-between mb-6"><h2 class="text-base font-bold text-slate-900 dark:text-white">Settings</h2><button data-act="close-settings" class="w-8 h-8 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400">${icS('x',18)}</button></div>
+      <nav class="space-y-1"><button data-act="stab" data-stab="profile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='profile'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('steth',16)}Profile</button><button data-act="stab" data-stab="data" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='data'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('dl',16)}Data</button><button data-act="stab" data-stab="theme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='theme'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('system',16)}Theme</button></nav>
+    </div>
+    <div class="sm:hidden flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0"><h2 class="text-base font-bold text-slate-900 dark:text-white">Settings</h2><button data-act="close-settings" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">${icS('x',18)}</button></div>
+    <div class="sm:hidden flex border-b border-gray-100 dark:border-slate-800"><button data-act="stab" data-stab="profile" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='profile'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Profile</button><button data-act="stab" data-stab="data" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='data'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Data</button><button data-act="stab" data-stab="theme" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='theme'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Theme</button></div>
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6"><div class="max-w-xl mx-auto">
+      ${S.settingsTab==='profile'?`<div class="grid grid-cols-2 gap-4 mb-6"><div class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center border border-gray-100 dark:border-slate-700"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Logo</p>${p.logo?`<img src="${p.logo}" class="w-16 h-16 rounded-xl object-cover mx-auto mb-2 border border-gray-200 dark:border-slate-600"/>`:``}<div class="flex gap-2 justify-center"><button data-act="upload-logo" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Upload</button>${p.logo?`<button data-act="rm-logo" class="text-xs font-semibold text-red-500">Remove</button>`:''}</div></div><div class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center border border-gray-100 dark:border-slate-700"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Signature</p>${p.signature?`<img src="${p.signature}" class="h-12 object-contain mx-auto mb-2"/>`:``}<div class="flex gap-2 justify-center"><button data-act="upload-sig" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Upload</button>${p.signature?`<button data-act="rm-sig" class="text-xs font-semibold text-red-500">Remove</button>`:''}</div></div></div><div class="space-y-1">${fields.map(f=>`<div class="flex items-center justify-between py-3 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group" data-field="${f.key}"><div class="flex items-center gap-3 flex-1 min-w-0"><span class="text-slate-400 dark:text-slate-500">${icS(f.icon,16)}</span><div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase">${f.label}</p><p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate field-display">${f.val||'—'}</p><input type="text" class="hidden w-full px-2 py-1 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 dark:text-white field-input" value="${(f.val||'').replace(/"/g,'&quot;')}"/></div></div><button class="field-edit-btn w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center justify-center text-slate-300 group-hover:text-emerald-500 transition-colors btn-tap" data-act="edit-field" data-key="${f.key}">${icS('edit',14)}</button></div>`).join('')}</div>`
+      :S.settingsTab==='data'?`<div class="space-y-3"><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Export Data</h3><button data-act="exp-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('dl',16)}Export JSON</button><button data-act="exp-xls" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('xls',16)}Export Excel</button><button data-act="exp-csv" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('note',16)}Export CSV</button><div class="border-t border-gray-100 dark:border-slate-800 my-4"></div><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Import Data</h3><button data-act="imp-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('ul',16)}Import JSON File</button><div class="border-t border-gray-100 dark:border-slate-800 my-4"></div><h3 class="text-sm font-bold text-red-600 mb-2">Danger Zone</h3><button data-act="clear-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 text-sm font-medium btn-tap">${icS('trash',16)}Clear All Data</button></div>`
+      :`<div class="space-y-3"><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Appearance</h3><button data-act="set-theme" data-t="light" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='light'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center">${icS('sun',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='light'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">Light Mode</p><p class="text-xs text-slate-400">Bright and clean</p></div>${S.theme==='light'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button><button data-act="set-theme" data-t="dark" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='dark'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center">${icS('moon',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='dark'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">Dark Mode</p><p class="text-xs text-slate-400">Easy on the eyes</p></div>${S.theme==='dark'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button><button data-act="set-theme" data-t="system" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='system'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 flex items-center justify-center">${icS('system',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='system'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">System</p><p class="text-xs text-slate-400">Follow device settings</p></div>${S.theme==='system'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button></div>`}
+    </div></div>
+  </div>`;
+}
+
+// --- Form Calculations ---
+function getFormItems(){const rows=document.querySelectorAll('#items-box .item-row');const items=[];rows.forEach(r=>{items.push({name:r.querySelector('[data-f="name"]')?.value||'',quantity:parseInt(r.querySelector('[data-f="quantity"]')?.value)||0,unitPrice:parseFloat(r.querySelector('[data-f="unitPrice"]')?.value)||0})});return items}
+function recalc(){const items=getFormItems();const docFee=parseFloat(document.getElementById('i-docfee')?.value)||0;const disc=parseFloat(document.getElementById('i-disc')?.value)||0;const cash=parseFloat(document.getElementById('i-cash')?.value)||0;const sum=calcSummary(items,docFee,disc);const due=Math.max(0,sum.totalPayable-cash);const rows=document.querySelectorAll('#items-box .item-row');rows.forEach(r=>{const q=parseFloat(r.querySelector('[data-f="quantity"]')?.value)||0;const p=parseFloat(r.querySelector('[data-f="unitPrice"]')?.value)||0;const sub=r.querySelector('.rsub');if(sub)sub.textContent=fc(q*p)});const el=id=>document.getElementById(id);if(el('sum-items'))el('sum-items').textContent=sum.totalItems;if(el('sum-qty'))el('sum-qty').textContent=sum.totalQty;if(el('sum-psub'))el('sum-psub').textContent=fc(sum.productsSubtotal);if(el('sum-dfee'))el('sum-dfee').textContent=fc(sum.doctorFee);if(el('sum-total'))el('sum-total').textContent=fc(sum.totalPayable);if(el('sum-paid'))el('sum-paid').textContent=fc(cash);if(el('sum-due'))el('sum-due').textContent=fc(due)}
+
+// --- Event Handlers ---
+document.addEventListener('click',function(e){
+  // Ripple effect on FAB
+  const rippleHost=e.target.closest('.ripple-host');
+  if(rippleHost){
+    const circle=document.createElement('span');circle.className='ripple-circle';
+    const rect=rippleHost.getBoundingClientRect();
+    const size=Math.max(rect.width,rect.height);
+    circle.style.width=circle.style.height=size+'px';
+    circle.style.left=(e.clientX-rect.left-size/2)+'px';
+    circle.style.top=(e.clientY-rect.top-size/2)+'px';
+    rippleHost.appendChild(circle);
+    setTimeout(()=>circle.remove(),600);
   }
-  app.innerHTML=rSidebar()+`<main class="flex-1 min-h-screen overflow-x-hidden">${content}</main>`;
-  if(S.view==='new-invoice')recalc();
-}
 
-// --- Form Recalc ---
-function getItems(){
-  const rows=document.querySelectorAll('#items-box .item-row');
-  const items=[];
-  rows.forEach(r=>{items.push({name:r.querySelector('[data-f="name"]')?.value||'',quantity:parseFloat(r.querySelector('[data-f="quantity"]')?.value)||0,price:parseFloat(r.querySelector('[data-f="price"]')?.value)||0,discount:parseFloat(r.querySelector('[data-f="discount"]')?.value)||0,tax:parseFloat(r.querySelector('[data-f="tax"]')?.value)||0})});
-  return items;
-}
-function recalc(){
-  const rows=document.querySelectorAll('#items-box .item-row');
-  let sub=0,disc=0,tax=0;
-  rows.forEach(r=>{
-    const q=parseFloat(r.querySelector('[data-f="quantity"]')?.value)||0;
-    const p=parseFloat(r.querySelector('[data-f="price"]')?.value)||0;
-    const d=parseFloat(r.querySelector('[data-f="discount"]')?.value)||0;
-    const t=parseFloat(r.querySelector('[data-f="tax"]')?.value)||0;
-    const b=q*p;const da=b*(d/100);const ad=b-da;const ta=ad*(t/100);
-    sub+=b;disc+=da;tax+=ta;
-    const te=r.querySelector('.rtot');if(te)te.textContent=fc(ad+ta);
-  });
-  const g=sub-disc+tax;
-  const el=id=>document.getElementById(id);
-  if(el('s-sub'))el('s-sub').textContent=fc(sub);
-  if(el('s-disc'))el('s-disc').textContent='-'+fc(disc);
-  if(el('s-tax'))el('s-tax').textContent=fc(tax);
-  if(el('s-grand'))el('s-grand').textContent=fc(g);
-}
+  const nav=e.target.closest('[data-tab]');const act=e.target.closest('[data-act]');
+  if(nav){e.preventDefault();S.tab=nav.dataset.tab;saveS();render();return}
+  if(!act)return;const a=act.dataset.act;const id=act.dataset.id;
+  switch(a){
+    case 'new-inv':S.editId=null;S.showInvoice=true;render();break;
+    case 'close-inv':S.showInvoice=false;S.editId=null;render();break;
+    case 'close-view':S.viewInvId=null;render();break;
+    case 'open-settings':S.showSettings=true;render();break;
+    case 'close-settings':S.showSettings=false;render();break;
+    case 'stab':S.settingsTab=act.dataset.stab;render();break;
+    case 'toggle-theme':if(S.theme==='light')setTheme('dark');else if(S.theme==='dark')setTheme('system');else setTheme('light');break;
+    case 'set-theme':setTheme(act.dataset.t);render();break;
+    case 'add-row':{const box=document.getElementById('items-box');if(!box)return;const cur=getFormItems();cur.push({name:'',quantity:1,unitPrice:0});box.insertAdjacentHTML('beforeend',rItemRow({name:'',quantity:1,unitPrice:0},cur.length-1));recalc();box.lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});break}
+    case 'rm-row':{const box=document.getElementById('items-box');if(!box)return;const rows=box.querySelectorAll('.item-row');if(rows.length<=1){toast('At least one item required','warning');return}const idx=parseInt(act.dataset.idx);rows[idx]?.remove();box.querySelectorAll('.item-row').forEach((r,i)=>{r.dataset.idx=i;const rb=r.querySelector('[data-act="rm-row"]');if(rb)rb.dataset.idx=i;r.querySelector('span').textContent=i+1});recalc();break}
+    case 'save-inv':{
+      const pn=document.getElementById('i-pname')?.value.trim();if(!pn){toast('Patient name is required','error');document.getElementById('i-pname')?.focus();return}
+      const items=getFormItems().filter(i=>i.name.trim());if(!items.length){toast('Add at least one medicine/item','error');return}
+      const docFee=parseFloat(document.getElementById('i-docfee')?.value)||0;const disc=parseFloat(document.getElementById('i-disc')?.value)||0;const cash=parseFloat(document.getElementById('i-cash')?.value)||0;const sum=calcSummary(items,docFee,disc);
+      const inv={id:S.editId||gid(),invoiceNumber:document.getElementById('i-invnum')?.value||'INV-'+S.nextNum,date:document.getElementById('i-date')?.value||today(),time:document.getElementById('i-time')?.value||nowTime(),notes:document.getElementById('i-notes')?.value.trim()||'',patientName:pn,patientAddress:document.getElementById('i-paddr')?.value.trim()||'',patientMobile:document.getElementById('i-pmob')?.value.trim()||'',patientEmail:document.getElementById('i-pemail')?.value.trim()||'',rewardPoint:parseInt(document.getElementById('i-reward')?.value)||0,items,doctorFee:docFee,discount:disc,cashReceived:cash,...sum,createdAt:S.editId?(S.invoices.find(i=>i.id===S.editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
+      if(S.editId){const idx=S.invoices.findIndex(i=>i.id===S.editId);if(idx!==-1)S.invoices[idx]=inv;S.editId=null;toast('Invoice updated','success')}else{S.invoices.push(inv);S.nextNum++;toast('Invoice saved','success')}
+      S.showInvoice=false;S.viewInvId=inv.id;saveS();render();break}
+    case 'clear-inv':{S.editId=null;S.showInvoice=false;saveS();setTimeout(()=>{S.showInvoice=true;render()},50);break}
+    case 'edit-inv':S.editId=id;S.showInvoice=true;render();break;
+    case 'view-inv':S.viewInvId=id;render();break;
+    case 'del-inv':confirm2('Delete this invoice permanently?',()=>{S.invoices=S.invoices.filter(i=>i.id!==id);saveS();toast('Invoice deleted','info');if(S.viewInvId===id)S.viewInvId=null;render()});break;
+    case 'share-wa':shareWA(id);break;
+    case 'exp-pdf':expPDF(id);break;
+    case 'exp-img':expImg(id);break;
+    case 'edit-field':{const key=act.dataset.key;const container=act.closest('[data-field]');const display=container.querySelector('.field-display');const input=container.querySelector('.field-input');if(input.classList.contains('hidden')){input.classList.remove('hidden');display.classList.add('hidden');input.focus();act.innerHTML=icS('chk',14)}else{S.profile[key]=input.value.trim();saveS();display.textContent=input.value.trim()||'—';input.classList.add('hidden');display.classList.remove('hidden');act.innerHTML=icS('edit',14);toast('Updated','success')}break}
+    case 'upload-logo':document.getElementById('f-logo')?.click();break;
+    case 'rm-logo':S.profile.logo=null;saveS();toast('Logo removed','info');render();break;
+    case 'upload-sig':document.getElementById('f-sig')?.click();break;
+    case 'rm-sig':S.profile.signature=null;saveS();toast('Signature removed','info');render();break;
+    case 'exp-json':expAllJSON();break;case 'exp-xls':expAllXLS();break;case 'exp-csv':expAllCSV();break;case 'imp-json':document.getElementById('f-json')?.click();break;
+    case 'clear-all':confirm2('This will permanently delete ALL data. Continue?',()=>{S.invoices=[];S.nextNum=1001;saveS();toast('All data cleared','info');render()});break;
+  }
+});
 
-// --- Confirm Modal ---
-function confirmModal(msg,cb){
-  const m=document.createElement('div');
-  m.className='fixed inset-0 z-[150] flex items-center justify-center p-4';
-  m.style.cssText='background:rgba(15,23,42,0.6);backdrop-filter:blur(4px)';
-  m.innerHTML=`<div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm m-enter">
-    <h3 class="text-base font-bold text-slate-900 mb-2">Confirm Action</h3>
-    <p class="text-sm text-slate-500 mb-6">${msg}</p>
-    <div class="flex gap-3 justify-end">
-      <button class="cbtn px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-50 rounded-lg">Cancel</button>
-      <button class="obtn px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg">Confirm</button>
-    </div>
-  </div>`;
-  document.body.appendChild(m);
-  m.querySelector('.cbtn').onclick=()=>m.remove();
-  m.querySelector('.obtn').onclick=()=>{m.remove();cb()};
-  m.addEventListener('click',e=>{if(e.target===m)m.remove()});
-}
+document.addEventListener('input',function(e){
+  if(e.target.closest('#items-box')&&e.target.matches('[data-f]'))recalc();
+  if(e.target.id==='i-docfee')recalc();if(e.target.id==='i-disc')recalc();if(e.target.id==='i-cash')recalc();
+  if(e.target.id==='p-search'){S.search=e.target.value;const m=document.querySelector('.pb-24');if(m)m.innerHTML=renderContent()+renderBottomNav()}
+});
+document.addEventListener('change',function(e){if(e.target.id==='p-filter'){S.filter=e.target.value;const m=document.querySelector('.pb-24');if(m)m.innerHTML=renderContent()+renderBottomNav()}});
 
-// --- Export Functions ---
+document.getElementById('f-logo').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','error');return}const r=new FileReader();r.onload=ev=>{S.profile.logo=ev.target.result;saveS();toast('Logo uploaded','success');render()};r.readAsDataURL(f);e.target.value=''});
+document.getElementById('f-sig').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','error');return}const r=new FileReader();r.onload=ev=>{S.profile.signature=ev.target.result;saveS();toast('Signature uploaded','success');render()};r.readAsDataURL(f);e.target.value=''});
+document.getElementById('f-json').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);const invs=Array.isArray(d)?d:(d.invoices||[]);let c=0;invs.forEach(inv=>{if(inv.id&&inv.invoiceNumber&&inv.patientName&&!S.invoices.find(i=>i.id===inv.id)){S.invoices.push(inv);c++}});const mx=S.invoices.reduce((m,i)=>{const n=parseInt(i.invoiceNumber?.replace(/\D/g,''))||0;return n>m?n:m},S.nextNum);S.nextNum=mx+1;saveS();toast(`Imported ${c} invoice${c!==1?'s':''}`,'success');render()}catch(err){toast('Invalid JSON file','error')}};r.readAsText(f);e.target.value=''});
+
+function shareWA(id){const inv=S.invoices.find(i=>i.id===id);if(!inv)return;const p=S.profile;const ph=inv.patientMobile?inv.patientMobile.replace(/[^0-9+]/g,''):'';const msg=encodeURIComponent(`Hello ${inv.patientName}, thank you for visiting ${p.chamberName||'our chamber'}. Your invoice ${inv.invoiceNumber} for ${p.currency} ${inv.totalPayable.toFixed(2)} is ready. Regards, ${p.doctorName||'Doctor'}.`);window.open(ph?`https://wa.me/${ph.replace('+','')}?text=${msg}`:`https://wa.me/?text=${msg}`,'_blank');toast('Opening WhatsApp...','success')}
+
+// Optimized PDF export - reduced file size
 function expPDF(id){
   const inv=S.invoices.find(i=>i.id===id);if(!inv)return;
   toast('Generating PDF...','info');
-  const box=document.getElementById('inv-export');
-  box.innerHTML=rInvTmpl(inv);
-  box.style.left='0';
+  const box=document.getElementById('inv-export');box.innerHTML=rInvHTML(inv);box.style.left='0';
   setTimeout(()=>{
-    html2canvas(box,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{
-      const{jsPDF}=window.jspdf;
-      const pdf=new jsPDF('p','mm','a4');
+    // Use lower scale and JPEG compression for smaller file size
+    html2canvas(box,{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false}).then(canvas=>{
+      const{jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');
       const iw=210;const ih=(canvas.height*iw)/canvas.width;
-      pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,iw,ih);
+      // Use JPEG with 0.75 quality instead of PNG for much smaller size
+      const imgData=canvas.toDataURL('image/jpeg',0.75);
+      pdf.addImage(imgData,'JPEG',0,0,iw,ih);
       pdf.save(inv.invoiceNumber+'.pdf');
-      box.style.left='-9999px';box.innerHTML='';
-      toast('PDF downloaded','success');
+      box.style.left='-9999px';box.innerHTML='';toast('PDF downloaded','success');
     }).catch(()=>{box.style.left='-9999px';toast('PDF failed','error')});
   },300);
 }
 
-function expImg(id){
-  const inv=S.invoices.find(i=>i.id===id);if(!inv)return;
-  toast('Generating image...','info');
-  const box=document.getElementById('inv-export');
-  box.innerHTML=rInvTmpl(inv);
-  box.style.left='0';
-  setTimeout(()=>{
-    html2canvas(box,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{
-      const a=document.createElement('a');a.download=inv.invoiceNumber+'.png';a.href=canvas.toDataURL('image/png');a.click();
-      box.style.left='-9999px';box.innerHTML='';
-      toast('Image downloaded','success');
-    }).catch(()=>{box.style.left='-9999px';toast('Image failed','error')});
-  },300);
-}
+function expImg(id){const inv=S.invoices.find(i=>i.id===id);if(!inv)return;toast('Generating image...','info');const box=document.getElementById('inv-export');box.innerHTML=rInvHTML(inv);box.style.left='0';setTimeout(()=>{html2canvas(box,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{const a=document.createElement('a');a.download=inv.invoiceNumber+'.png';a.href=canvas.toDataURL('image/png');a.click();box.style.left='-9999px';box.innerHTML='';toast('Image downloaded','success')}).catch(()=>{box.style.left='-9999px';toast('Image failed','error')})},300)}
+function expAllJSON(){if(!S.invoices.length){toast('No data','warning');return}const d=JSON.stringify(S.invoices,null,2);const b=new Blob([d],{type:'application/json'});const a=document.createElement('a');a.download='medbill_'+today()+'.json';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);toast('JSON exported','success')}
+function expAllXLS(){if(!S.invoices.length){toast('No data','warning');return}try{const rows=S.invoices.map(i=>({'Invoice #':i.invoiceNumber,Date:i.date,Time:i.time||'',Patient:i.patientName,Mobile:i.patientMobile||'','Total Payable':i.totalPayable}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invoices');XLSX.writeFile(wb,'medbill_'+today()+'.xlsx');toast('Excel exported','success')}catch(e){toast('Export failed','error')}}
+function expAllCSV(){if(!S.invoices.length){toast('No data','warning');return}try{const hdr=['Invoice#','Date','Patient','Mobile','TotalPayable'];const rows=S.invoices.map(i=>[i.invoiceNumber,i.date,i.patientName,i.patientMobile||'',i.totalPayable]);const csv=[hdr,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.download='medbill_'+today()+'.csv';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);toast('CSV exported','success')}catch(e){toast('Export failed','error')}}
 
-function shareWA(id){
-  const inv=S.invoices.find(i=>i.id===id);if(!inv)return;
-  const p=S.profile;
-  const ph=inv.customerPhone?inv.customerPhone.replace(/[^0-9+]/g,''):'';
-  const msg=encodeURIComponent(`Hello ${inv.customerName}, thank you for visiting ${p.chamberName||'our chamber'}. Your invoice ${inv.invoiceNumber} for ${p.currency} ${inv.grandTotal.toFixed(2)} is ready. Regards, ${p.doctorName||'Doctor'}.`);
-  const url=ph?`https://wa.me/${ph.replace('+','')}?text=${msg}`:`https://wa.me/?text=${msg}`;
-  window.open(url,'_blank');
-  toast('Opening WhatsApp...','success');
-}
-
-function expAllJSON(){
-  if(!S.invoices.length){toast('No invoices','warning');return}
-  const d=JSON.stringify(S.invoices,null,2);
-  const b=new Blob([d],{type:'application/json'});
-  const a=document.createElement('a');a.download='medbill_'+today()+'.json';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);
-  toast('JSON exported','success');
-}
-
-function expAllXLS(){
-  if(!S.invoices.length){toast('No invoices','warning');return}
-  try{
-    const rows=S.invoices.map(inv=>({'Invoice #':inv.invoiceNumber,Date:inv.date,Customer:inv.customerName,Phone:inv.customerPhone||'',Items:inv.items.map(i=>i.name).join(', '),'Subtotal':inv.subtotal,'Discount':inv.totalDiscount,'Tax':inv.totalTax,'Grand Total':inv.grandTotal,Archived:inv.archived?'Yes':'No'}));
-    const ws=XLSX.utils.json_to_sheet(rows);
-    const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invoices');
-    XLSX.writeFile(wb,'medbill_'+today()+'.xlsx');
-    toast('Excel exported','success');
-  }catch(e){toast('Excel export failed','error')}
-}
-
-function expAllCSV(){
-  if(!S.invoices.length){toast('No invoices','warning');return}
-  try{
-    const rows=S.invoices.map(inv=>[inv.invoiceNumber,inv.date,inv.customerName,inv.customerPhone||'',inv.items.map(i=>i.name).join('; '),inv.subtotal,inv.totalDiscount,inv.totalTax,inv.grandTotal,inv.archived?'Yes':'No']);
-    const hdr=['Invoice #','Date','Customer','Phone','Items','Subtotal','Discount','Tax','Grand Total','Archived'];
-    const csv=[hdr,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
-    const b=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement('a');a.download='medbill_'+today()+'.csv';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);
-    toast('CSV exported','success');
-  }catch(e){toast('CSV export failed','error')}
-}
-
-// --- Event Delegation ---
-document.addEventListener('click',function(e){
-  const nav=e.target.closest('[data-nav]');
-  const act=e.target.closest('[data-act]');
-
-  if(nav){
-    e.preventDefault();
-    const v=nav.dataset.nav;
-    if(v==='new-invoice'&&S.view!=='new-invoice')S.editId=null;
-    S.view=v;S.sbOpen=false;saveS();render();
-    return;
-  }
-
-  if(!act)return;
-  const a=act.dataset.act;
-  const id=act.dataset.id;
-
-  switch(a){
-    case 'toggle-sb':S.sbOpen=!S.sbOpen;render();break;
-    case 'close-sb':S.sbOpen=false;render();break;
-
-    case 'view-inv':S.detailId=id;S.view='invoice-detail';saveS();render();break;
-
-    case 'add-item':{
-      const box=document.getElementById('items-box');if(!box)return;
-      const cur=getItems();cur.push({name:'',quantity:1,price:0,discount:0,tax:0});
-      box.insertAdjacentHTML('beforeend',rItemRow({name:'',quantity:1,price:0,discount:0,tax:0},cur.length-1));
-      recalc();box.lastElementChild?.scrollIntoView({behavior:'smooth',block:'nearest'});
-      break;
-    }
-
-    case 'rm-item':{
-      const box=document.getElementById('items-box');if(!box)return;
-      const rows=box.querySelectorAll('.item-row');
-      if(rows.length<=1){toast('At least one item required','warning');return}
-      const idx=parseInt(act.dataset.idx);
-      rows[idx]?.classList.add('r-exit');
-      setTimeout(()=>{rows[idx]?.remove();box.querySelectorAll('.item-row').forEach((r,i)=>{r.dataset.idx=i;const rb=r.querySelector('[data-act="rm-item"]');if(rb)rb.dataset.idx=i});recalc()},250);
-      break;
-    }
-
-    case 'save-inv':{
-      const cn=document.getElementById('i-cust')?.value.trim();
-      const cp=document.getElementById('i-phone')?.value.trim();
-      const dt=document.getElementById('i-date')?.value;
-      const nm=document.getElementById('i-num')?.value;
-      const nt=document.getElementById('i-notes')?.value.trim();
-      const items=getItems().filter(i=>i.name.trim());
-      if(!cn){toast('Customer name is required','error');document.getElementById('i-cust')?.focus();return}
-      if(!items.length){toast('Add at least one item','error');return}
-      const tot=calcTotals(items);
-      const inv={id:S.editId||gid(),invoiceNumber:nm,date:dt||today(),customerName:cn,customerPhone:cp,items,notes:nt,...tot,archived:false,createdAt:S.editId?(S.invoices.find(i=>i.id===S.editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};
-      if(S.editId){const idx=S.invoices.findIndex(i=>i.id===S.editId);if(idx!==-1){inv.archived=S.invoices[idx].archived;S.invoices[idx]=inv}S.editId=null;toast('Invoice updated','success')}
-      else{S.invoices.push(inv);S.nextNum++;toast('Invoice created','success')}
-      S.detailId=inv.id;S.view='invoice-detail';saveS();render();
-      break;
-    }
-
-    case 'cancel-edit':S.editId=null;S.view='history';saveS();render();break;
-    case 'edit-inv':S.editId=id;S.view='new-invoice';saveS();render();break;
-
-    case 'arch-inv':{const inv=S.invoices.find(i=>i.id===id);if(inv){inv.archived=true;saveS();toast('Invoice archived','info');render()}break}
-    case 'unarch-inv':{const inv=S.invoices.find(i=>i.id===id);if(inv){inv.archived=false;saveS();toast('Invoice restored','success');render()}break}
-
-    case 'del-inv':confirmModal('Delete this invoice permanently?',()=>{S.invoices=S.invoices.filter(i=>i.id!==id);saveS();toast('Invoice deleted','info');if(S.view==='invoice-detail')S.view='history';render()});break;
-
-    case 'back-hist':S.view='history';S.detailId=null;saveS();render();break;
-
-    case 'save-set':{
-      S.profile.chamberName=document.getElementById('s-ch')?.value.trim()||'';
-      S.profile.address=document.getElementById('s-addr')?.value.trim()||'';
-      S.profile.contact=document.getElementById('s-cont')?.value.trim()||'';
-      S.profile.doctorName=document.getElementById('s-doc')?.value.trim()||'';
-      S.profile.currency=document.getElementById('s-cur')?.value.trim()||'BDT';
-      S.profile.sym=document.getElementById('s-sym')?.value.trim()||'৳';
-      saveS();toast('Profile saved','success');render();
-      break;
-    }
-
-    case 'upload-logo':document.getElementById('f-logo')?.click();break;
-    case 'rm-logo':S.profile.logo=null;saveS();toast('Logo removed','info');render();break;
-
-    case 'exp-pdf':expPDF(id);break;
-    case 'exp-img':expImg(id);break;
-    case 'share-wa':shareWA(id);break;
-
-    case 'exp-all-json':expAllJSON();break;
-    case 'exp-all-xls':expAllXLS();break;
-    case 'exp-all-csv':expAllCSV();break;
-    case 'imp-json':document.getElementById('f-json')?.click();break;
-
-    case 'clear-all':confirmModal('This will permanently delete all data. Continue?',()=>{S=defState();saveS();toast('All data cleared','info');render()});break;
-  }
-});
-
-// Input events for live calculation
-document.addEventListener('input',function(e){
-  if(e.target.closest('#items-box')&&e.target.matches('[data-f]'))recalc();
-  if(e.target.id==='h-search'){S.search=e.target.value;const m=document.querySelector('#app main');if(m)m.innerHTML=rHist()}
-});
-document.addEventListener('change',function(e){
-  if(e.target.id==='h-filter'){S.filter=e.target.value;const m=document.querySelector('#app main');if(m)m.innerHTML=rHist()}
-  if(e.target.id==='h-sort'){S.sort=e.target.value;const m=document.querySelector('#app main');if(m)m.innerHTML=rHist()}
-});
-
-// File inputs
-document.getElementById('f-logo').addEventListener('change',function(e){
-  const f=e.target.files?.[0];if(!f)return;
-  if(f.size>2*1024*1024){toast('Logo must be under 2MB','error');return}
-  const r=new FileReader();
-  r.onload=ev=>{S.profile.logo=ev.target.result;saveS();toast('Logo uploaded','success');render()};
-  r.readAsDataURL(f);e.target.value='';
-});
-
-document.getElementById('f-json').addEventListener('change',function(e){
-  const f=e.target.files?.[0];if(!f)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const d=JSON.parse(ev.target.result);
-      const invs=Array.isArray(d)?d:(d.invoices||[]);
-      let c=0;
-      invs.forEach(inv=>{if(inv.id&&inv.invoiceNumber&&inv.customerName&&!S.invoices.find(i=>i.id===inv.id)){S.invoices.push(inv);c++}});
-      const mx=S.invoices.reduce((m,i)=>{const n=parseInt(i.invoiceNumber?.replace(/\D/g,''))||0;return n>m?n:m},S.nextNum);
-      S.nextNum=mx+1;
-      saveS();toast(`Imported ${c} invoice${c!==1?'s':''}`,'success');render();
-    }catch(err){toast('Invalid JSON file','error')}
-  };
-  r.readAsText(f);e.target.value='';
-});
-
-// Initial render
 render();
 </script>
 </body>
