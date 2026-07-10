@@ -1,310 +1,1264 @@
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>MedBill Pro</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config={darkMode:'class',theme:{extend:{fontFamily:{sans:['Inter','system-ui','sans-serif'],signature:['Dancing Script','cursive']}}}}
-</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>শিফা ফার্মেসি — Invoice Management System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- jsPDF + html2canvas CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;padding-bottom:env(safe-area-inset-bottom)}
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:4px}
-::-webkit-scrollbar-track{background:transparent}
+/* ============================================================
+   ডিজাইন সিস্টেম — CSS Variables
+   ============================================================ */
+:root{
+  --bg:#0f172a;
+  --bg2:#0b1222;
+  --surface:rgba(30,41,59,.55);
+  --surface2:rgba(51,65,85,.4);
+  --border:rgba(148,163,184,.15);
+  --accent:#14b8a6;      /* teal — হোমিও ব্র্যান্ডিং */
+  --accent2:#0d9488;
+  --accent-glow:rgba(20,184,166,.35);
+  --danger:#ef4444;
+  --warn:#f59e0b;
+  --ok:#22c55e;
+  --text:#e2e8f0;
+  --muted:#94a3b8;
+  --radius:18px;
+  --radius-sm:12px;
+  --font-bn:'Hind Siliguri',sans-serif;
+  --font-en:'Inter',sans-serif;
+  --shadow:0 8px 32px rgba(0,0,0,.4);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:var(--font-bn);
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(20,184,166,.12), transparent 60%),
+    radial-gradient(1000px 500px at 100% 10%, rgba(59,130,246,.1), transparent 55%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+  color:var(--text);
+  line-height:1.6;
+  overflow-x:hidden;
+  padding-bottom:80px;
+}
+.en{font-family:var(--font-en)}
+input,textarea,select,button{font-family:inherit;color:inherit}
 
-@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-@keyframes scaleIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
-@keyframes toastIn{from{opacity:0;transform:translateX(80px)}to{opacity:1;transform:translateX(0)}}
-@keyframes toastOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(80px)}}
-@keyframes rippleEffect{0%{transform:scale(0);opacity:.5}100%{transform:scale(2.5);opacity:0}}
-@keyframes sectionReveal{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
-@keyframes fabGlow{0%,100%{box-shadow:0 0 5px rgba(5,150,105,.4),0 0 20px rgba(5,150,105,.15)}50%{box-shadow:0 0 15px rgba(5,150,105,.6),0 0 35px rgba(5,150,105,.25)}}
-@keyframes drawLine{from{stroke-dashoffset:2000}to{stroke-dashoffset:0}}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+/* ============================================================
+   Layout
+   ============================================================ */
+.app{max-width:760px;margin:0 auto;padding:16px 14px 20px}
+.topbar{
+  display:flex;align-items:center;gap:12px;margin-bottom:18px;
+  padding:14px 16px;background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.topbar .logo{
+  width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:grid;place-items:center;font-weight:700;color:#fff;font-size:20px;
+  border:1px solid rgba(255,255,255,.15);
+}
+.topbar h1{
+  font-size:16px;font-weight:700;line-height:1.2;
+  background:linear-gradient(90deg,#fff,#99f6e4);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.topbar small{color:var(--muted);font-size:11px;font-weight:400}
 
-.section-reveal{opacity:0;animation:sectionReveal .6s cubic-bezier(.16,1,.3,1) both}
-.anim-fade{animation:fadeIn .3s ease both}
-.anim-scale{animation:scaleIn .3s cubic-bezier(.16,1,.3,1) both}
-.anim-slide-up{animation:slideUp .35s cubic-bezier(.16,1,.3,1) both}
-.t-in{animation:toastIn .4s cubic-bezier(.16,1,.3,1) both}
-.t-out{animation:toastOut .3s ease both}
-.btn-tap:active{transform:scale(.96);transition:transform .08s}
+/* ============================================================
+   Cards / Glassmorphism
+   ============================================================ */
+.card{
+  background:var(--surface);backdrop-filter:blur(16px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;
+  animation:fadeUp .5s ease both;
+}
+.card-head{
+  display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer;
+  user-select:none;font-weight:600;font-size:15px;
+}
+.card-head .ic{color:var(--accent);display:flex}
+.card-head .chev{margin-left:auto;transition:transform .3s ease;color:var(--muted)}
+.card.open .chev{transform:rotate(180deg)}
+.card-body{
+  max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s ease;padding:0 16px;
+}
+.card.open .card-body{max-height:4000px;padding:0 16px 16px}
 
-.ripple-host{position:relative;overflow:hidden}
-.ripple-host .ripple-circle{position:absolute;border-radius:50%;background:rgba(255,255,255,.45);pointer-events:none;animation:rippleEffect .55s ease-out forwards;transform:scale(0)}
-.fab-glow{animation:fabGlow 2.5s ease-in-out infinite}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.stagger>*{animation:fadeUp .5s ease both}
+.stagger>*:nth-child(1){animation-delay:.05s}
+.stagger>*:nth-child(2){animation-delay:.1s}
+.stagger>*:nth-child(3){animation-delay:.15s}
+.stagger>*:nth-child(4){animation-delay:.2s}
+.stagger>*:nth-child(5){animation-delay:.25s}
+.stagger>*:nth-child(6){animation-delay:.3s}
 
-input:focus,select:focus,textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(5,150,105,.18);border-color:#059669!important}
-.dark input:focus,.dark select:focus,.dark textarea:focus{box-shadow:0 0 0 3px rgba(16,185,129,.2);border-color:#10b981!important}
+/* ============================================================
+   Form elements
+   ============================================================ */
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 5px;font-weight:500}
+input,textarea,select{
+  width:100%;padding:11px 13px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:14px;transition:border .2s,box-shadow .2s;outline:none;
+}
+input:focus,textarea:focus,select:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);
+}
+input::placeholder,textarea::placeholder{color:#64748b}
+textarea{resize:vertical;min-height:60px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
 
-.card-hover{transition:all .25s cubic-bezier(.16,1,.3,1)}
-.card-hover:hover{transform:translateY(-4px);box-shadow:0 12px 40px -12px rgba(0,0,0,.2)}
-.dark .card-hover:hover{box-shadow:0 12px 40px -12px rgba(0,0,0,.5)}
-.glass{backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 16px;border:none;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;font-weight:600;font-size:14px;cursor:pointer;
+  transition:transform .1s,box-shadow .2s,filter .2s;width:100%;
+  box-shadow:0 6px 18px var(--accent-glow);
+}
+.btn:active{transform:scale(.96)}
+.btn.ghost{background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border)}
+.btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 6px 18px rgba(239,68,68,.3)}
+.btn.sm{padding:8px 12px;font-size:12px;width:auto}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn-row .btn{flex:1;min-width:120px}
+.iconbtn{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  width:36px;height:36px;display:grid;place-items:center;cursor:pointer;
+  color:var(--muted);transition:transform .1s,color .2s;flex-shrink:0;
+}
+.iconbtn:active{transform:scale(.9)}
+.iconbtn.del:hover{color:var(--danger)}
+
+/* ============================================================
+   Product rows
+   ============================================================ */
+.prod-row{
+  display:grid;grid-template-columns:26px 1fr 60px 78px 78px 36px;gap:6px;align-items:center;
+  padding:10px 0;border-bottom:1px dashed var(--border);
+  animation:fadeUp .3s ease both;
+}
+.prod-row .sl{color:var(--muted);font-size:12px;text-align:center;font-weight:600}
+.prod-row input{padding:8px 8px;font-size:13px}
+.prod-row .sub{font-size:13px;font-weight:600;color:var(--accent);text-align:right;padding-right:4px}
+.prod-head{
+  display:grid;grid-template-columns:26px 1fr 60px 78px 78px 36px;gap:6px;
+  font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
+  padding:6px 0;border-bottom:1px solid var(--border);font-weight:600;
+}
+.prod-head span:nth-child(4),.prod-head span:nth-child(5){text-align:right}
+
+/* autocomplete */
+.ac-wrap{position:relative}
+.ac-list{
+  position:absolute;top:100%;left:0;right:0;z-index:50;
+  background:#1e293b;border:1px solid var(--border);border-radius:10px;
+  margin-top:4px;max-height:180px;overflow-y:auto;box-shadow:var(--shadow);display:none;
+}
+.ac-list.show{display:block}
+.ac-item{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
+.ac-item:hover,.ac-item.active{background:var(--accent);color:#fff}
+.ac-item small{color:var(--muted);float:right}
+.ac-item:hover small{color:rgba(255,255,255,.8)}
+
+/* ============================================================
+   Summary
+   ============================================================ */
+.sumrow{display:flex;justify-content:space-between;padding:7px 0;font-size:14px}
+.sumrow.total{
+  border-top:2px solid var(--accent);margin-top:8px;padding-top:12px;
+  font-size:20px;font-weight:700;color:var(--accent);
+}
+.sumrow .lbl{color:var(--muted)}
+.change-box{
+  background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(20,184,166,.1));
+  border:1.5px solid var(--ok);border-radius:var(--radius);padding:16px;margin-top:14px;
+}
+.change-box .big{font-size:34px;font-weight:800;color:var(--ok);text-align:center;line-height:1.1}
+.change-box .cap{text-align:center;color:var(--muted);font-size:12px;margin-top:4px}
+
+/* ============================================================
+   Bottom nav
+   ============================================================ */
+.bottomnav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  display:flex;justify-content:space-around;
+  background:rgba(15,23,42,.85);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.navbtn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:10px;padding:6px 2px;transition:color .2s;border-radius:10px;
+}
+.navbtn.active{color:var(--accent)}
+.navbtn.active svg{filter:drop-shadow(0 0 6px var(--accent-glow))}
+.navbtn:active{transform:scale(.92)}
+
+/* ============================================================
+   Views
+   ============================================================ */
+.view{display:none}
+.view.active{display:block;animation:fadeUp .4s ease}
+
+/* ============================================================
+   History / list items
+   ============================================================ */
+.list-item{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;
+  animation:fadeUp .35s ease both;
+}
+.list-item .info{flex:1;min-width:0}
+.list-item .info .t{font-weight:600;font-size:14px}
+.list-item .info .s{font-size:11px;color:var(--muted);margin-top:2px}
+.list-item .amt{font-weight:700;color:var(--accent);text-align:right;font-size:15px}
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;margin-left:4px;
+}
+.badge.due{background:rgba(245,158,11,.2);color:var(--warn)}
+.badge.paid{background:rgba(34,197,94,.2);color:var(--ok)}
+.badge.low{background:rgba(239,68,68,.2);color:var(--danger)}
+.badge.exp{background:rgba(245,158,11,.2);color:var(--warn)}
+
+/* ============================================================
+   Dashboard stats
+   ============================================================ */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:14px;text-align:center;animation:fadeUp .4s ease both;
+}
+.stat .v{font-size:22px;font-weight:800;color:var(--accent)}
+.stat .l{font-size:11px;color:var(--muted);margin-top:2px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}
+.bar-chart .bar{
+  flex:1;background:linear-gradient(180deg,var(--accent),var(--accent2));
+  border-radius:6px 6px 0 0;min-height:4px;position:relative;transition:height .6s ease;
+}
+.bar-chart .bar span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted)}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:#1e293b;border:1px solid var(--accent);color:var(--text);
+  padding:12px 20px;border-radius:30px;font-size:13px;z-index:2000;
+  box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .3s;display:flex;align-items:center;gap:8px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--danger)}
+
+/* ============================================================
+   Modal (PIN lock / confirm)
+   ============================================================ */
+.modal{
+  position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  display:none;place-items:center;padding:20px;
+}
+.modal.show{display:grid;animation:fadeUp .3s ease}
+.modal-card{
+  background:var(--surface);backdrop-filter:blur(20px);border:1px solid var(--border);
+  border-radius:var(--radius);padding:24px;max-width:340px;width:100%;text-align:center;
+}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);transition:.2s}
+.pin-dot.on{background:var(--accent);box-shadow:0 0 10px var(--accent-glow)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
+.key{
+  padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+  font-size:20px;font-weight:600;cursor:pointer;transition:transform .1s;
+}
+.key:active{transform:scale(.9);background:var(--accent);color:#fff}
+
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:13px}
+.section-title{font-size:13px;color:var(--muted);margin:16px 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.logo-upload{
+  width:80px;height:80px;border-radius:14px;border:2px dashed var(--border);
+  display:grid;place-items:center;cursor:pointer;overflow:hidden;margin:8px 0;
+  background:var(--surface2);font-size:11px;color:var(--muted);text-align:center;
+}
+.logo-upload img{width:100%;height:100%;object-fit:cover}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.chip{
+  padding:6px 12px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);
+  font-size:12px;cursor:pointer;transition:.2s;
+}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important;color:#000;background:#fff}
+}
 </style>
 </head>
-<body class="bg-gray-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased transition-colors">
+<body>
 
-<div id="app"></div>
-<div id="toasts" class="fixed top-4 right-4 z-[999] flex flex-col gap-2.5 pointer-events-none max-w-sm"></div>
-<div id="inv-export" style="position:fixed;left:-9999px;top:0;z-index:-1;width:800px;background:#fff"></div>
-<input type="file" id="f-json" accept=".json" class="hidden">
-<input type="file" id="f-logo" accept="image/*" class="hidden">
-<input type="file" id="f-sig" accept="image/*" class="hidden">
-
-<script>
-const IC={
-  plus:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>`,
-  x:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
-  search:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
-  edit:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
-  trash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
-  chk:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
-  save:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
-  refresh:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>`,
-  wa:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>`,
-  pdf:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-  img:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
-  xls:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
-  gear:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>`,
-  sun:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
-  moon:`<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`,
-  system:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/><path d="M12 8a4 4 0 0 1 0 8" fill="currentColor" stroke="none"/></svg>`,
-  steth:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>`,
-  user:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  phone:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`,
-  mail:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
-  map:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
-  cal:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>`,
-  dollar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
-  pill:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>`,
-  award:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>`,
-  arrow:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7M19 12H5"/></svg>`,
-  dash:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>`,
-  list:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`,
-  note:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/></svg>`,
-  clock:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-};
-
-function ic(name,w=18,h=18){return`<span class="inline-flex items-center justify-center" style="width:${w}px;height:${h}px">${IC[name]||''}</span>`}
-function icS(name,s=16){return ic(name,s,s)}
-
-const SK='medbill_v8';
-function defState(){return{tab:'dashboard',invoices:[],profile:{appName:'MedBill Pro',chamberName:'HealthFirst Medical Chamber',address:'123 Medical Plaza, Dhanmondi, Dhaka 1205',phone:'+880 1712-345678',email:'info@healthfirst.com.bd',logo:null,signature:null,doctorName:'Dr. Aminul Haque',doctorDegree:'MBBS, FCPS (Medicine)',currency:'BDT',sym:'৳'},nextNum:1001,search:'',filter:'all',theme:'system',showInvoice:false,editId:null,showSettings:false,settingsTab:'profile',viewInvId:null}}
-let S=loadS();
-function loadS(){try{const d=localStorage.getItem(SK);if(d){const p=JSON.parse(d);return{...defState(),...p,showInvoice:false,showSettings:false,settingsTab:'profile',viewInvId:null}}}catch(e){}return defState()}
-function saveS(){try{localStorage.setItem(SK,JSON.stringify(S))}catch(e){}}
-
-function getSystemDark(){try{return window.matchMedia('(prefers-color-scheme: dark)').matches}catch(e){return false}}
-function applyTheme(){const h=document.documentElement;h.classList.remove('dark');const isDark=S.theme==='dark'||(S.theme==='system'&&getSystemDark());if(isDark)h.classList.add('dark')}
-function setTheme(t){S.theme=t;saveS();applyTheme();render()}
-applyTheme();try{window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(S.theme==='system')applyTheme()})}catch(e){}
-
-function gid(){return'inv_'+Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
-function fc(a){return S.profile.sym+' '+Number(a||0).toFixed(2)}
-function fd(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}
-function today(){return new Date().toISOString().split('T')[0]}
-function nowTime(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')}
-
-function toast(msg,type='success'){const c=document.getElementById('toasts');const cols={success:'bg-emerald-600 dark:bg-emerald-700',error:'bg-red-600',info:'bg-slate-700',warning:'bg-amber-500'};const t=document.createElement('div');t.className=`pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${cols[type]||cols.info} t-in`;t.innerHTML=`${icS('chk',16)}<span>${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.classList.replace('t-in','t-out');setTimeout(()=>t.remove(),300)},3000)}
-function confirm2(msg,cb){const m=document.createElement('div');m.className='fixed inset-0 z-[500] flex items-center justify-center p-4';m.style.cssText='background:rgba(0,0,0,.5);backdrop-filter:blur(4px)';m.innerHTML=`<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 w-full max-w-sm anim-scale"><h3 class="text-base font-bold text-slate-900 dark:text-white mb-2">Confirm</h3><p class="text-sm text-slate-500 dark:text-slate-400 mb-6">${msg}</p><div class="flex gap-3 justify-end"><button class="cbtn px-4 py-2 text-sm font-medium border border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg dark:text-slate-300">Cancel</button><button class="obtn px-4 py-2 text-sm font-semibold bg-red-600 hover:bg-red-700 text-white rounded-lg">Delete</button></div></div>`;document.body.appendChild(m);m.querySelector('.cbtn').onclick=()=>m.remove();m.querySelector('.obtn').onclick=()=>{m.remove();cb()};m.addEventListener('click',e=>{if(e.target===m)m.remove()})}
-
-function calcSummary(items,docFee,discount){const tI=items.length;const tQ=items.reduce((s,i)=>s+(i.quantity||0),0);const pS=items.reduce((s,i)=>s+(i.quantity||0)*(i.unitPrice||0),0);const tP=pS+(docFee||0)-(discount||0);return{totalItems:tI,totalQty:tQ,productsSubtotal:pS,doctorFee:docFee||0,discount:discount||0,totalPayable:tP}}
-
-// --- Chart Drawing Function ---
-function drawRevenueChart(days, revs) {
-  const canvas = document.getElementById('revenueCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  ctx.scale(dpr, dpr);
-  const w = rect.width, h = rect.height;
-  const isDark = document.documentElement.classList.contains('dark');
-  
-  const maxRev = Math.max(...revs, 1);
-  const padding = { top: 20, right: 20, bottom: 30, left: 10 };
-  const chartW = w - padding.left - padding.right;
-  const chartH = h - padding.top - padding.bottom;
-
-  ctx.clearRect(0, 0, w, h);
-
-  // Draw smooth curve
-  if (revs.some(r => r > 0)) {
-    const points = revs.map((r, i) => ({
-      x: padding.left + (i / (days.length - 1)) * chartW,
-      y: padding.top + chartH - (r / maxRev) * chartH
-    }));
-
-    // Gradient Fill
-    const gradient = ctx.createLinearGradient(0, padding.top, 0, h - padding.bottom);
-    gradient.addColorStop(0, isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(5, 150, 105, 0.2)');
-    gradient.addColorStop(1, isDark ? 'rgba(16, 185, 129, 0)' : 'rgba(5, 150, 105, 0)');
-
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    
-    for (let i = 0; i < points.length - 1; i++) {
-      const x_mid = (points[i].x + points[i+1].x) / 2;
-      const y_mid = (points[i].y + points[i+1].y) / 2;
-      const cp_x1 = (x_mid + points[i].x) / 2;
-      const cp_x2 = (x_mid + points[i+1].x) / 2;
-      ctx.quadraticCurveTo(points[i].x, points[i].y, x_mid, y_mid);
-    }
-    ctx.quadraticCurveTo(points[points.length-1].x, points[points.length-1].y, points[points.length-1].x, points[points.length-1].y);
-
-    // Fill area
-    ctx.lineTo(points[points.length-1].x, h - padding.bottom);
-    ctx.lineTo(points[0].x, h - padding.bottom);
-    ctx.closePath();
-    ctx.fillStyle = gradient;
-    ctx.fill();
-
-    // Draw line
-    ctx.beginPath();
-    ctx.moveTo(points[0].x, points[0].y);
-    for (let i = 0; i < points.length - 1; i++) {
-      const x_mid = (points[i].x + points[i+1].x) / 2;
-      const y_mid = (points[i].y + points[i+1].y) / 2;
-      ctx.quadraticCurveTo(points[i].x, points[i].y, x_mid, y_mid);
-    }
-    ctx.quadraticCurveTo(points[points.length-1].x, points[points.length-1].y, points[points.length-1].x, points[points.length-1].y);
-    
-    ctx.strokeStyle = isDark ? '#10b981' : '#059669';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Draw dots
-    points.forEach((p, i) => {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = isDark ? '#10b981' : '#059669';
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fillStyle = isDark ? '#0f172a' : '#ffffff';
-      ctx.fill();
-    });
-  } else {
-    ctx.beginPath();
-    ctx.moveTo(padding.left, h - padding.bottom);
-    ctx.lineTo(w - padding.right, h - padding.bottom);
-    ctx.strokeStyle = isDark ? '#334155' : '#e2e8f0';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  // Draw labels
-  ctx.fillStyle = isDark ? '#64748b' : '#94a3b8';
-  ctx.font = '11px Inter';
-  ctx.textAlign = 'center';
-  days.forEach((day, i) => {
-    const x = padding.left + (i / (days.length - 1)) * chartW;
-    ctx.fillText(day, x, h - 8);
-  });
-}
-
-function render(){const app=document.getElementById('app');app.innerHTML=renderHeader()+`<div class="pb-24">${renderContent()}</div>`+renderBottomNav();if(S.showInvoice)app.innerHTML+=renderInvoiceModal();if(S.showSettings)app.innerHTML+=renderSettingsModal();if(S.viewInvId)app.innerHTML+=renderViewModal();if(S.tab==='dashboard'){setTimeout(()=>{const invs=S.invoices;const days=[];const revs=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().split('T')[0];days.push(d.toLocaleDateString('en-GB',{weekday:'short'}));revs.push(invs.filter(x=>x.date===ds).reduce((s,x)=>s+x.totalPayable,0))}drawRevenueChart(days,revs)},50)}}
-
-function renderHeader(){const p=S.profile;let themeIcon='system';if(S.theme==='light')themeIcon='moon';else if(S.theme==='dark')themeIcon='sun';else themeIcon=getSystemDark()?'sun':'moon';return`<header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 glass border-b border-gray-100 dark:border-slate-800 transition-colors"><div class="flex items-center justify-between h-14 px-4 max-w-7xl mx-auto"><button data-act="open-settings" class="flex items-center gap-2.5 btn-tap">${p.logo?`<img src="${p.logo}" class="w-8 h-8 rounded-lg object-cover"/>`:`<div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white">${icS('steth',18)}</div>`}<span class="text-base font-bold text-slate-900 dark:text-white hidden sm:block">${p.appName||'MedBill Pro'}</span></button><div class="flex items-center gap-1"><button data-act="toggle-theme" class="w-9 h-9 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors btn-tap" title="Theme">${icS(themeIcon,18)}</button><button data-act="open-settings" class="w-9 h-9 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors btn-tap" title="Settings">${icS('gear',18)}</button></div></div></header>`}
-
-function renderContent(){if(S.tab==='dashboard')return renderDashboard();return renderPatients()}
-
-function renderDashboard(){const invs=S.invoices;const totalRev=invs.reduce((s,i)=>s+i.totalPayable,0);const todayInvs=invs.filter(i=>i.date===today());const todayRev=todayInvs.reduce((s,i)=>s+i.totalPayable,0);const totalDue=invs.reduce((s,i)=>s+Math.max(0,i.totalPayable-(i.cashReceived||0)),0);const recent=[...invs].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,6);const stats=[{label:'Total Revenue',value:fc(totalRev),icon:'dollar',bg:'bg-emerald-50 dark:bg-emerald-900/30',ic:'bg-emerald-100 dark:bg-emerald-800/50 text-emerald-600 dark:text-emerald-400'},{label:'Total Patients',value:invs.length,icon:'user',bg:'bg-blue-50 dark:bg-blue-900/30',ic:'bg-blue-100 dark:bg-blue-800/50 text-blue-600 dark:text-blue-400'},{label:"Today's Revenue",value:fc(todayRev),icon:'cal',bg:'bg-violet-50 dark:bg-violet-900/30',ic:'bg-violet-100 dark:bg-violet-800/50 text-violet-600 dark:text-violet-400'},{label:'Total Due',value:fc(totalDue),icon:'award',bg:'bg-amber-50 dark:bg-amber-900/30',ic:'bg-amber-100 dark:bg-amber-800/50 text-amber-600 dark:text-amber-400'}];return`<main class="max-w-7xl mx-auto px-4 py-6"><div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">${stats.map((s,i)=>`<div class="section-reveal ${s.bg} rounded-2xl p-4 lg:p-5 border border-gray-100 dark:border-slate-800" style="animation-delay:${200+i*100}ms"><div class="flex items-center justify-between mb-3"><div class="w-10 h-10 rounded-xl ${s.ic} flex items-center justify-center">${icS(s.icon,20)}</div></div><p class="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">${s.value}</p><p class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-1">${s.label}</p></div>`).join('')}</div><div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6"><div class="section-reveal lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:600ms"><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Revenue — Last 7 Days</h3><canvas id="revenueCanvas" class="w-full" style="height:180px"></canvas></div><div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden" style="animation-delay:750ms"><div class="flex items-center justify-between px-5 py-3 border-b border-gray-50 dark:border-slate-800"><h3 class="text-sm font-bold text-slate-900 dark:text-white">Recent</h3><button data-tab="patients" class="text-xs text-emerald-600 dark:text-emerald-400 font-semibold hover:underline">View All</button></div>${recent.length===0?`<div class="p-8 text-center"><p class="text-sm text-slate-400">No invoices yet</p></div>`:`<div class="divide-y divide-gray-50 dark:divide-slate-800">${recent.map(inv=>`<div class="flex items-center justify-between px-5 py-2.5 hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors" data-act="view-inv" data-id="${inv.id}"><div><p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${inv.patientName}</p><p class="text-[11px] text-slate-400">${inv.invoiceNumber} &middot; ${fd(inv.date)}</p></div><span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">${fc(inv.totalPayable)}</span></div>`).join('')}</div>`}</div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6"><div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:900ms"><div class="flex items-center gap-3 mb-2">${icS('pill',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Top Medicines</span></div>${getTopMeds().map(m=>`<div class="flex justify-between text-xs py-1"><span class="text-slate-500 dark:text-slate-400">${m.name}</span><span class="font-semibold text-slate-700 dark:text-slate-300">${m.count}x</span></div>`).join('')||'<p class="text-xs text-slate-400">No data</p>'}</div><div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:1000ms"><div class="flex items-center gap-3 mb-2">${icS('cal',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Today's Summary</span></div><div class="space-y-1.5"><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Invoices</span><span class="font-semibold text-slate-700 dark:text-slate-300">${todayInvs.length}</span></div><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Revenue</span><span class="font-semibold text-emerald-600">${fc(todayRev)}</span></div></div></div><div class="section-reveal bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-5" style="animation-delay:1100ms"><div class="flex items-center gap-3 mb-2">${icS('dollar',20)}<span class="text-sm font-bold text-slate-900 dark:text-white">Payment Status</span></div><div class="space-y-1.5"><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Total Billed</span><span class="font-semibold text-slate-700 dark:text-slate-300">${fc(totalRev)}</span></div><div class="flex justify-between text-xs"><span class="text-slate-500 dark:text-slate-400">Due</span><span class="font-semibold text-red-500">${fc(totalDue)}</span></div></div></div></div></main>`}
-
-function getTopMeds(){const m={};S.invoices.forEach(inv=>inv.items.forEach(it=>{if(it.name){m[it.name]=(m[it.name]||0)+it.quantity}}));return Object.entries(m).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([name,count])=>({name,count}))}
-
-// --- Patients with Gradient Cards ---
-const gradients=['from-emerald-500 to-teal-400','from-blue-500 to-indigo-400','from-violet-500 to-purple-400','from-amber-400 to-orange-500','from-rose-500 to-pink-400','from-cyan-500 to-sky-400','from-fuchsia-500 to-pink-500','from-lime-500 to-emerald-400'];
-
-function renderPatients(){
-  let invs=[...S.invoices].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-  if(S.search){const q=S.search.toLowerCase();invs=invs.filter(i=>i.patientName?.toLowerCase().includes(q)||i.patientMobile?.includes(q)||i.patientEmail?.toLowerCase().includes(q)||i.patientAddress?.toLowerCase().includes(q)||i.invoiceNumber?.toLowerCase().includes(q))}
-  if(S.filter==='today')invs=invs.filter(i=>i.date===today());else if(S.filter==='due')invs=invs.filter(i=>(i.totalPayable-(i.cashReceived||0))>0);else if(S.filter==='paid')invs=invs.filter(i=>(i.totalPayable-(i.cashReceived||0))<=0);
-
-  return`<main class="max-w-7xl mx-auto px-4 py-6 anim-fade">
-    <div class="flex flex-col sm:flex-row gap-3 mb-6">
-      <div class="relative flex-1"><span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">${icS('search',15)}</span><input id="p-search" type="text" value="${S.search}" placeholder="Search by name, phone, email, address..." class="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-white"/></div>
-      <select id="p-filter" class="px-3 py-2.5 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 dark:text-white min-w-[120px]"><option value="all" ${S.filter==='all'?'selected':''}>All</option><option value="today" ${S.filter==='today'?'selected':''}>Today</option><option value="paid" ${S.filter==='paid'?'selected':''}>Paid</option><option value="due" ${S.filter==='due'?'selected':''}>Due</option></select>
+<div class="app">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="logo" id="topLogo">শি</div>
+    <div>
+      <h1 id="topName">শিফা ফার্মেসি</h1>
+      <small class="en">Invoice Management System</small>
     </div>
-    ${invs.length===0?`<div class="text-center py-20 section-reveal" style="animation-delay:200ms"><div class="w-20 h-20 rounded-3xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4 text-slate-300 dark:text-slate-600">${icS('user',36)}</div><p class="text-slate-400 dark:text-slate-500 text-sm mb-1">${S.search?'No results found':'No patients yet'}</p></div>`:
-    `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">${invs.map((inv,i)=>{const due=Math.max(0,inv.totalPayable-(inv.cashReceived||0));const isPaid=due<=0;const grad=gradients[i%gradients.length];return`<div class="section-reveal card-hover bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden" style="animation-delay:${150+i*60}ms">
-      <!-- Gradient Header Section -->
-      <div class="bg-gradient-to-r ${grad} p-4 pb-3 text-white">
-        <div class="flex items-start justify-between mb-1">
-          <div><p class="text-sm font-bold opacity-95">${inv.invoiceNumber}</p><p class="text-[11px] opacity-80 flex items-center gap-1.5">${icS('cal',12)}${fd(inv.date)} ${inv.time?'<span class="mx-0.5">·</span><span class="flex items-center gap-1">'+icS('clock',12)+inv.time+'</span>':''}</p></div>
-          <span class="bg-white/25 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full">${fc(inv.totalPayable)}</span>
+  </div>
+
+  <!-- ============ VIEW: NEW INVOICE ============ -->
+  <div class="view active" id="view-new">
+
+    <!-- Patient -->
+    <div class="card open">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="ic">👤</span> রোগীর তথ্য
+        <span class="chev">▾</span>
+      </div>
+      <div class="card-body stagger">
+        <div class="ac-wrap">
+          <label>মোবাইল নম্বর</label>
+          <input id="pMobile" placeholder="01XXXXXXXXX" inputmode="numeric" oninput="patientSuggest(this)">
+          <div class="ac-list" id="pAcList"></div>
+        </div>
+        <label>রোগীর নাম</label>
+        <input id="pName" placeholder="পূর্ণ নাম">
+        <div class="grid2">
+          <div><label>ইমেইল</label><input id="pEmail" placeholder="email@example.com" class="en"></div>
+          <div><label>রিওয়ার্ড পয়েন্ট</label><input id="pReward" type="number" value="0" class="en"></div>
+        </div>
+        <label>ঠিকানা</label>
+        <textarea id="pAddress" placeholder="বাড়ি/রোড, এলাকা, শহর"></textarea>
+        <div id="pHistory" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+    <!-- Invoice meta -->
+    <div class="card open">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="ic">🧾</span> ইনভয়েস তথ্য
+        <span class="chev">▾</span>
+      </div>
+      <div class="card-body">
+        <div class="grid2">
+          <div><label>ইনভয়েস নম্বর</label><input id="invNo" class="en" readonly></div>
+          <div><label>তারিখ</label><input id="invDate" type="date" class="en"></div>
+        </div>
+        <label>সময়</label>
+        <input id="invTime" type="time" class="en">
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div class="card open">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="ic">💊</span> ঔষধ / প্রোডাক্ট
+        <span class="chev">▾</span>
+      </div>
+      <div class="card-body">
+        <div class="prod-head">
+          <span>#</span><span>নাম</span><span>Qty</span><span>দাম</span><span>মোট</span><span></span>
+        </div>
+        <div id="prodList"></div>
+        <button class="btn ghost sm" style="width:100%;margin-top:12px" onclick="addProdRow()">＋ নতুন প্রোডাক্ট যোগ</button>
+      </div>
+    </div>
+
+    <!-- Doctor fee -->
+    <div class="card">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="ic">🩺</span> ডাক্তার ফি
+        <span class="chev">▾</span>
+      </div>
+      <div class="card-body">
+        <label>ডাক্তার নির্বাচন</label>
+        <select id="docSelect" onchange="onDocSelect()"><option value="">— নেই —</option></select>
+        <label>কনসালটেশন ফি</label>
+        <input id="docFee" type="number" value="0" class="en" oninput="calcTotals()">
+      </div>
+    </div>
+
+    <!-- Summary + Payment -->
+    <div class="card open">
+      <div class="card-head" onclick="toggleCard(this)">
+        <span class="ic">💰</span> সামারি ও পেমেন্ট
+        <span class="chev">▾</span>
+      </div>
+      <div class="card-body">
+        <div class="sumrow"><span class="lbl">মোট আইটেম</span><span id="sItems" class="en">0</span></div>
+        <div class="sumrow"><span class="lbl">মোট পরিমাণ (Qty)</span><span id="sQty" class="en">0</span></div>
+        <div class="sumrow"><span class="lbl">প্রোডাক্ট সাবটোটাল</span><span id="sSub" class="en">৳0</span></div>
+        <div class="sumrow"><span class="lbl">ডাক্তার ফি</span><span id="sDoc" class="en">৳0</span></div>
+
+        <label>ডিসকাউন্ট</label>
+        <div class="grid2">
+          <select id="discType" onchange="calcTotals()">
+            <option value="flat">ফ্ল্যাট (৳)</option>
+            <option value="percent">শতাংশ (%)</option>
+          </select>
+          <input id="discVal" type="number" value="0" class="en" oninput="calcTotals()">
+        </div>
+        <div class="sumrow" style="margin-top:8px"><span class="lbl">ডিসকাউন্ট</span><span id="sDisc" class="en">−৳0</span></div>
+
+        <div class="sumrow total"><span>সর্বমোট প্রদেয়</span><span id="sTotal" class="en">৳0</span></div>
+
+        <div class="section-title">নগদ পেমেন্ট (Cash)</div>
+        <div class="grid2">
+          <div><label>গ্রাহক প্রদান</label><input id="cashRecv" type="number" value="0" class="en" style="font-size:16px" oninput="calcTotals()"></div>
+          <div><label>পরিশোধিত</label><input id="paidAmt" type="number" value="0" class="en" oninput="calcTotals()"></div>
+        </div>
+        <div class="sumrow"><span class="lbl">বাকি (Due)</span><span id="sDue" class="en" style="color:var(--warn)">৳0</span></div>
+
+        <div class="change-box">
+          <div class="big en" id="changeOut">৳0</div>
+          <div class="cap">ফেরত (Change Return)</div>
+        </div>
+
+        <label>নোট</label>
+        <textarea id="invNote" placeholder="অতিরিক্ত নোট (ঐচ্ছিক)"></textarea>
+
+        <div class="btn-row">
+          <button class="btn" onclick="saveInvoice()">✅ সেভ করুন</button>
+          <button class="btn ghost" onclick="clearForm()">🔄 নতুন</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn ghost" onclick="exportPDF()">📄 PDF</button>
+          <button class="btn ghost" onclick="exportPNG()">🖼️ Image</button>
+          <button class="btn ghost" onclick="shareWhatsApp()">📱 WhatsApp</button>
+          <button class="btn ghost" onclick="printInvoice()">🖨️ Print</button>
         </div>
       </div>
-      <!-- Patient Details -->
-      <div class="p-4 pb-3 space-y-2">
-        <p class="text-[15px] font-bold text-slate-900 dark:text-white">${inv.patientName||'—'}</p>
-        ${inv.patientAddress?`<p class="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5">${icS('map',12)}<span>${inv.patientAddress}</span></p>`:''}
-        ${inv.patientMobile?`<a href="tel:${inv.patientMobile}" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5 font-medium">${icS('phone',12)}<span>${inv.patientMobile}</span></a>`:''}
-        ${inv.patientEmail?`<a href="mailto:${inv.patientEmail}" class="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5 font-medium">${icS('mail',12)}<span>${inv.patientEmail}</span></a>`:''}
-        <p class="text-[11px] text-slate-400 pt-1">${inv.items.length} item${inv.items.length>1?'s':''}</p>
+    </div>
+  </div>
+
+  <!-- ============ VIEW: HISTORY / DASHBOARD ============ -->
+  <div class="view" id="view-history">
+    <div class="section-title">📊 ড্যাশবোর্ড</div>
+    <div class="stats" id="dashStats"></div>
+    <div class="card open">
+      <div class="card-head"><span class="ic">📈</span> গত ৭ দিনের বিক্রি</div>
+      <div class="card-body">
+        <div class="bar-chart" id="weekChart"></div>
       </div>
-      <!-- Icon Actions -->
-      <div class="flex border-t border-gray-100 dark:border-slate-800">
-        <button data-act="share-wa" data-id="${inv.id}" class="flex-1 flex items-center justify-center py-3 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 btn-tap transition-colors">${icS('wa',18)}</button>
-        <button data-act="exp-pdf" data-id="${inv.id}" class="flex-1 flex items-center justify-center py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 btn-tap transition-colors border-l border-gray-100 dark:border-slate-800">${icS('pdf',18)}</button>
-        <button data-act="exp-img" data-id="${inv.id}" class="flex-1 flex items-center justify-center py-3 text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/20 btn-tap transition-colors border-l border-gray-100 dark:border-slate-800">${icS('img',18)}</button>
-        <button data-act="edit-inv" data-id="${inv.id}" class="flex-1 flex items-center justify-center py-3 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 btn-tap transition-colors border-l border-gray-100 dark:border-slate-800">${icS('edit',18)}</button>
-        <button data-act="del-inv" data-id="${inv.id}" class="flex-1 flex items-center justify-center py-3 text-slate-400 hover:bg-red-50 hover:text-red-500 btn-tap transition-colors border-l border-gray-100 dark:border-slate-800">${icS('trash',18)}</button>
+    </div>
+    <div class="card open">
+      <div class="card-head"><span class="ic">🏆</span> সর্বাধিক বিক্রীত প্রোডাক্ট</div>
+      <div class="card-body" id="topProducts"></div>
+    </div>
+
+    <div class="section-title">🔍 ইনভয়েস হিস্টরি</div>
+    <input id="histSearch" placeholder="নাম বা ইনভয়েস নম্বর দিয়ে খুঁজুন..." oninput="renderHistory()" style="margin-bottom:8px">
+    <div class="chip-row" style="margin-bottom:10px">
+      <span class="chip on" data-f="all" onclick="setHistFilter(this)">সব</span>
+      <span class="chip" data-f="paid" onclick="setHistFilter(this)">পরিশোধিত</span>
+      <span class="chip" data-f="due" onclick="setHistFilter(this)">বাকি</span>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- ============ VIEW: INVENTORY / PATIENTS ============ -->
+  <div class="view" id="view-patients">
+    <div class="section-title">📦 ইনভেন্টরি (স্টক)</div>
+    <div class="card open">
+      <div class="card-head" onclick="toggleCard(this)"><span class="ic">➕</span> নতুন প্রোডাক্ট<span class="chev">▾</span></div>
+      <div class="card-body">
+        <label>প্রোডাক্টের নাম</label><input id="invName" placeholder="ঔষধের নাম">
+        <div class="grid2">
+          <div><label>দাম</label><input id="invPrice" type="number" class="en"></div>
+          <div><label>স্টক</label><input id="invStock" type="number" class="en"></div>
+        </div>
+        <div class="grid2">
+          <div><label>ক্যাটাগরি</label>
+            <select id="invCat"><option>ট্যাবলেট</option><option>ড্রপ</option><option>মাদার টিংচার</option><option>সিরাপ</option><option>অন্যান্য</option></select>
+          </div>
+          <div><label>এক্সপায়ারি</label><input id="invExp" type="date" class="en"></div>
+        </div>
+        <label>লো-স্টক থ্রেশহোল্ড</label><input id="invThresh" type="number" value="10" class="en">
+        <button class="btn" style="margin-top:12px" onclick="saveProduct()">💾 প্রোডাক্ট সেভ</button>
       </div>
-    </div>`}).join('')}</div>`}
-  </main>`;
+    </div>
+    <input id="stockSearch" placeholder="প্রোডাক্ট খুঁজুন..." oninput="renderStock()" style="margin-bottom:10px">
+    <div id="stockList"></div>
+
+    <div class="section-title">👥 রোগীর তালিকা</div>
+    <div id="patientsList"></div>
+  </div>
+
+  <!-- ============ VIEW: SETTINGS ============ -->
+  <div class="view" id="view-settings">
+    <div class="card open">
+      <div class="card-head"><span class="ic">🏪</span> ফার্মেসি ব্র্যান্ডিং</div>
+      <div class="card-body">
+        <label>শপ লোগো</label>
+        <div class="logo-upload" onclick="document.getElementById('logoInput').click()" id="logoPrev">Tap to<br>upload</div>
+        <input type="file" id="logoInput" accept="image/*" style="display:none" onchange="onLogoUpload(event)">
+        <label>ফার্মেসির নাম</label><input id="setName">
+        <label>ঠিকানা (লাইন ১)</label><input id="setAddr1" placeholder="রোড/এলাকা">
+        <label>ঠিকানা (লাইন ২)</label><input id="setAddr2" placeholder="শহর/জেলা">
+        <label>মোবাইল নম্বর (কমা দিয়ে একাধিক)</label><input id="setPhone" class="en">
+        <label>ইমেইল</label><input id="setEmail" class="en">
+        <label>থ্যাংক ইউ মেসেজ</label><textarea id="setThanks">ধন্যবাদ! আবার আসবেন।</textarea>
+        <div class="grid2">
+          <div><label>ইনভয়েস প্রিফিক্স</label><input id="setPrefix" class="en" value="INV-2026-"></div>
+          <div><label>শুরুর নম্বর</label><input id="setStart" type="number" class="en" value="1"></div>
+        </div>
+        <label>সংখ্যা ফরম্যাট</label>
+        <div class="chip-row">
+          <span class="chip on" data-num="en" onclick="setNumFmt(this)">English (123)</span>
+          <span class="chip" data-num="bn" onclick="setNumFmt(this)">বাংলা (১২৩)</span>
+        </div>
+        <button class="btn" style="margin-top:14px" onclick="saveSettings()">✅ Save Settings</button>
+      </div>
+    </div>
+
+    <div class="card open">
+      <div class="card-head"><span class="ic">🔒</span> নিরাপত্তা ও ডেটা</div>
+      <div class="card-body">
+        <label>অ্যাপ লক (৪-ডিজিট PIN)</label>
+        <input id="setPin" type="password" inputmode="numeric" maxlength="4" placeholder="নতুন PIN (খালি রাখলে লক বন্ধ)" class="en">
+        <div class="btn-row">
+          <button class="btn ghost" onclick="savePin()">🔐 PIN সেট</button>
+        </div>
+        <div class="section-title">ব্যাকআপ / রিস্টোর</div>
+        <div class="btn-row">
+          <button class="btn ghost" onclick="backupData()">⬇️ ব্যাকআপ (JSON)</button>
+          <button class="btn ghost" onclick="document.getElementById('restoreInput').click()">⬆️ রিস্টোর</button>
+          <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="restoreData(event)">
+        </div>
+        <div class="btn-row">
+          <button class="btn danger" onclick="clearAllData()">🗑️ সব ডেটা মুছুন</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom nav -->
+<div class="bottomnav">
+  <button class="navbtn active" data-view="new" onclick="switchView('new',this)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>নতুন
+  </button>
+  <button class="navbtn" data-view="history" onclick="switchView('history',this)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>হিস্টরি
+  </button>
+  <button class="navbtn" data-view="patients" onclick="switchView('patients',this)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>স্টক
+  </button>
+  <button class="navbtn" data-view="settings" onclick="switchView('settings',this)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>সেটিংস
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- PIN Modal -->
+<div class="modal" id="pinModal">
+  <div class="modal-card">
+    <h3 style="margin-bottom:6px">🔒 অ্যাপ লক</h3>
+    <p style="color:var(--muted);font-size:13px">PIN দিন</p>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="keypad" id="keypad"></div>
+  </div>
+</div>
+
+<!-- Print area (hidden) -->
+<div id="printArea" style="display:none"></div>
+
+<script>
+/* ============================================================
+   ডেটা লেয়ার — localStorage
+   ============================================================ */
+const DB = {
+  get:(k,d)=>{try{return JSON.parse(localStorage.getItem('pharmacy_'+k))??d}catch(e){return d}},
+  set:(k,v)=>localStorage.setItem('pharmacy_'+k,JSON.stringify(v))
+};
+let invoices = DB.get('invoices',[]);
+let patients = DB.get('patients',[]);
+let products = DB.get('products',[]);
+let doctors  = DB.get('doctors',[{name:'ডাঃ (ডিফল্ট)',fee:0}]);
+let settings = DB.get('settings',{
+  name:'শিফা ফার্মেসি',addr1:'',addr2:'',phone:'',email:'',
+  thanks:'ধন্যবাদ! আবার আসবেন।',prefix:'INV-2026-',start:1,numFmt:'en',logo:''
+});
+let counter  = DB.get('counter',settings.start||1);
+let currentRows = [];
+let histFilter = 'all';
+
+/* ============================================================
+   Helpers
+   ============================================================ */
+function toBnNum(n){
+  if(settings.numFmt!=='bn') return String(n);
+  const map={'0':'০','1':'১','2':'২','3':'৩','4':'৪','5':'৫','6':'৬','7':'৭','8':'৮','9':'৯'};
+  return String(n).replace(/[0-9]/g,d=>map[d]);
+}
+function money(n){return '৳'+toBnNum((Math.round(n*100)/100).toLocaleString('en-IN'))}
+function toast(msg,err){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show'+(err?' err':'');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2500);
+}
+function toggleCard(el){el.parentElement.classList.toggle('open')}
+function switchView(v,btn){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.navbtn').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(v==='history'){renderDashboard();renderHistory()}
+  if(v==='patients'){renderStock();renderPatients()}
 }
 
-function renderBottomNav(){const isDash=S.tab==='dashboard';const isPat=S.tab==='patients';return`<nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 glass border-t border-gray-200 dark:border-slate-800 transition-colors" style="padding-bottom:env(safe-area-inset-bottom)"><div class="flex items-end justify-around h-16 max-w-xl mx-auto relative"><button data-tab="dashboard" class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 btn-tap transition-colors ${isDash?'text-emerald-600 dark:text-emerald-400':'text-slate-400 dark:text-slate-500'}">${icS('dash',22)}<span class="text-[10px] font-semibold">Dashboard</span></button><div class="flex flex-col items-center justify-end flex-1 h-full"><button data-act="new-inv" class="ripple-host relative -top-5 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl flex items-center justify-center border-4 border-white dark:border-slate-900 transition-transform active:scale-90 fab-glow">${icS('plus',28)}</button></div><button data-tab="patients" class="flex flex-col items-center justify-center flex-1 h-full gap-0.5 btn-tap transition-colors ${isPat?'text-emerald-600 dark:text-emerald-400':'text-slate-400 dark:text-slate-500'}">${icS('list',22)}<span class="text-[10px] font-semibold">Patients</span></button></div></nav>`}
+/* ============================================================
+   Invoice number
+   ============================================================ */
+function nextInvNo(){return settings.prefix+String(counter).padStart(4,'0')}
+function refreshInvNo(){document.getElementById('invNo').value=nextInvNo()}
 
-function renderInvoiceModal(){const ed=S.editId?S.invoices.find(i=>i.id===S.editId):null;const items=ed?ed.items:[{name:'',quantity:1,unitPrice:0}];return`<div class="fixed inset-0 z-50 flex flex-col bg-white dark:bg-slate-900 anim-slide-up" id="inv-modal"><div class="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0"><h2 class="text-base font-bold text-slate-900 dark:text-white">${ed?'Edit Invoice':'New Invoice'}</h2><button data-act="close-inv" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">${icS('x',20)}</button></div><div class="flex-1 overflow-y-auto"><div class="max-w-2xl mx-auto p-4 space-y-5"><section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4"><h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('user',15)}Patient Information</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Patient Name *</label><input id="i-pname" type="text" value="${ed?ed.patientName:''}" placeholder="Full name" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Address</label><input id="i-paddr" type="text" value="${ed?ed.patientAddress||'':''}" placeholder="Address" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Mobile Number</label><input id="i-pmob" type="text" value="${ed?ed.patientMobile||'':''}" placeholder="+880 1XXX-XXXXXX" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Email Address</label><input id="i-pemail" type="email" value="${ed?ed.patientEmail||'':''}" placeholder="email@example.com" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Reward Point</label><input id="i-reward" type="number" value="${ed?ed.rewardPoint||0:0}" min="0" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div></div></section><section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4"><h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('note',15)}Invoice Details</h3><div class="grid grid-cols-1 sm:grid-cols-3 gap-3"><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Invoice No.</label><input id="i-invnum" type="text" value="${ed?ed.invoiceNumber:'INV-'+String(S.nextNum).padStart(4,'0')}" readonly class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Date</label><input id="i-date" type="date" value="${ed?ed.date:today()}" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Time</label><input id="i-time" type="time" value="${ed?ed.time||'':nowTime()}" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div></div><div class="mt-3"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Notes</label><textarea id="i-notes" rows="2" placeholder="Additional notes..." class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white resize-none">${ed?ed.notes||'':''}</textarea></div></section><section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4"><div class="flex items-center justify-between mb-3"><h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-2">${icS('pill',15)}Products / Medicines</h3><button data-act="add-row" class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 flex items-center gap-1 btn-tap">${icS('plus',14)}Add</button></div><div class="overflow-x-auto -mx-4 px-4"><div class="min-w-[600px]"><div class="flex gap-2 mb-2 px-1 text-[9px] font-bold text-slate-400 uppercase"><div class="w-8 text-center">SL</div><div class="flex-1 min-w-[180px]">Name</div><div class="w-[70px] text-center">Qty</div><div class="w-[100px] text-right">Price</div><div class="w-[100px] text-right">Subtotal</div><div class="w-8"></div></div><div id="items-box" class="space-y-2">${items.map((it,i)=>rItemRow(it,i)).join('')}</div></div></div><button data-act="add-row" class="mt-3 w-full py-2.5 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl text-xs text-slate-400 hover:text-emerald-600 hover:border-emerald-300 transition-all btn-tap">${icS('plus',14)} Add Item</button></section><section class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4"><h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-3 flex items-center gap-2">${icS('steth',15)}Doctor Fee</h3><div class="max-w-xs"><label class="block text-[10px] font-bold text-slate-400 uppercase mb-1">Doctor Visit Fee</label><input id="i-docfee" type="number" value="${ed?ed.doctorFee||0:0}" min="0" step="1" class="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div></section><section class="bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-800/40"><h3 class="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider mb-3">Invoice Summary</h3><div class="space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Items</span><span id="sum-items" class="font-semibold text-slate-700 dark:text-slate-300">0</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Quantity</span><span id="sum-qty" class="font-semibold text-slate-700 dark:text-slate-300">0</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Products Subtotal</span><span id="sum-psub" class="font-semibold text-slate-700 dark:text-slate-300">${fc(0)}</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Doctor Fee</span><span id="sum-dfee" class="font-semibold text-slate-700 dark:text-slate-300">${fc(0)}</span></div><div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400">Discount (–)</span><input id="i-disc" type="number" value="${ed?ed.discount||0:0}" min="0" step="1" class="w-28 px-2 py-1 text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div class="border-t border-emerald-200 dark:border-emerald-800/40 pt-2 flex justify-between"><span class="font-bold text-emerald-800 dark:text-emerald-300">TOTAL PAYABLE</span><span id="sum-total" class="text-lg font-black text-emerald-700 dark:text-emerald-400">${fc(0)}</span></div></div><div class="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800/40 space-y-2 text-sm"><div class="flex justify-between items-center"><span class="text-slate-500 dark:text-slate-400">Cash / Payment Received</span><input id="i-cash" type="number" value="${ed?ed.cashReceived||0:0}" min="0" step="1" class="w-28 px-2 py-1 text-sm text-right border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-white"/></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total Paid</span><span id="sum-paid" class="font-semibold text-emerald-600 dark:text-emerald-400">${fc(0)}</span></div><div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Due</span><span id="sum-due" class="font-semibold text-red-500">${fc(0)}</span></div></div></section><div class="grid grid-cols-2 gap-3 pb-6"><button data-act="save-inv" class="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 btn-tap transition-colors">${icS('save',18)}Save Invoice</button><button data-act="clear-inv" class="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white font-bold text-sm btn-tap transition-colors">${icS('refresh',18)}Clear & New</button></div></div></div></div>`}
+/* ============================================================
+   Product rows
+   ============================================================ */
+function addProdRow(data){
+  const idx=currentRows.length;
+  currentRows.push(data||{name:'',qty:1,unitPrice:0});
+  const row=document.createElement('div');
+  row.className='prod-row';row.dataset.idx=idx;
+  row.innerHTML=`
+    <span class="sl">${toBnNum(idx+1)}</span>
+    <div class="ac-wrap">
+      <input class="p-name" placeholder="নাম" value="${data?data.name:''}" oninput="prodNameInput(this,${idx})">
+      <div class="ac-list"></div>
+    </div>
+    <input class="p-qty" type="number" min="1" value="${data?data.qty:1}" oninput="rowCalc(${idx})">
+    <input class="p-price" type="number" min="0" value="${data?data.unitPrice:0}" oninput="rowCalc(${idx})">
+    <span class="sub">৳0</span>
+    <div class="iconbtn del" onclick="delProdRow(${idx})">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+    </div>`;
+  document.getElementById('prodList').appendChild(row);
+  rowCalc(idx);
+}
+function delProdRow(idx){
+  currentRows[idx]=null;
+  const r=document.querySelector(`.prod-row[data-idx="${idx}"]`);
+  if(r){r.style.maxHeight=r.offsetHeight+'px';r.style.overflow='hidden';
+    requestAnimationFrame(()=>{r.style.transition='.3s';r.style.maxHeight='0';r.style.opacity='0';r.style.padding='0'});
+    setTimeout(()=>{r.remove();calcTotals()},300)}
+}
+function rowCalc(idx){
+  const r=document.querySelector(`.prod-row[data-idx="${idx}"]`);if(!r)return;
+  const qty=+r.querySelector('.p-qty').value||0;
+  const price=+r.querySelector('.p-price').value||0;
+  const name=r.querySelector('.p-name').value;
+  currentRows[idx]={name,qty,unitPrice:price};
+  r.querySelector('.sub').textContent=money(qty*price);
+  calcTotals();
+}
+function prodNameInput(el,idx){
+  currentRows[idx].name=el.value;
+  const list=el.parentElement.querySelector('.ac-list');
+  const q=el.value.trim().toLowerCase();
+  if(!q){list.classList.remove('show');return}
+  const matches=products.filter(p=>p.name.toLowerCase().includes(q)).slice(0,5);
+  if(!matches.length){list.classList.remove('show');return}
+  list.innerHTML=matches.map(p=>{
+    const low=p.stock<=p.thresh?'<span class="badge low">লো স্টক</span>':'';
+    return `<div class="ac-item" onclick="pickProduct(${idx},'${encodeURIComponent(p.name)}')">${p.name}${low}<small>${money(p.price)} · স্টক ${toBnNum(p.stock)}</small></div>`;
+  }).join('');
+  list.classList.add('show');
+}
+function pickProduct(idx,encName){
+  const name=decodeURIComponent(encName);
+  const p=products.find(x=>x.name===name);if(!p)return;
+  const r=document.querySelector(`.prod-row[data-idx="${idx}"]`);
+  r.querySelector('.p-name').value=p.name;
+  r.querySelector('.p-price').value=p.price;
+  r.querySelector('.ac-list').classList.remove('show');
+  rowCalc(idx);
+}
 
-function rItemRow(item,idx){const sub=(item.quantity||0)*(item.unitPrice||0);return`<div class="item-row flex gap-2 items-center bg-white dark:bg-slate-800 rounded-lg p-2 border border-gray-100 dark:border-slate-700" data-idx="${idx}"><div class="w-8 text-center text-xs font-bold text-slate-400">${idx+1}</div><div class="flex-1 min-w-[180px]"><input type="text" data-f="name" value="${item.name||''}" placeholder="Medicine name" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"/></div><div class="w-[70px]"><input type="number" data-f="quantity" value="${item.quantity||1}" min="1" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 dark:text-white text-center"/></div><div class="w-[100px]"><input type="number" data-f="unitPrice" value="${item.unitPrice||0}" min="0" step="0.01" class="w-full px-2 py-1.5 text-sm border border-gray-200 dark:border-slate-600 rounded-md bg-gray-50 dark:bg-slate-700 dark:text-white text-right"/></div><div class="w-[100px] flex items-center justify-end"><span class="rsub text-sm font-bold text-slate-700 dark:text-slate-300">${fc(sub)}</span></div><div class="w-8 flex items-center justify-center"><button data-act="rm-row" data-idx="${idx}" class="p-1 rounded text-slate-300 hover:text-red-500 transition-colors">${icS('x',14)}</button></div></div>`}
+/* ============================================================
+   Totals + Payment
+   ============================================================ */
+function calcTotals(){
+  const rows=currentRows.filter(Boolean);
+  let items=0,qty=0,sub=0;
+  rows.forEach(r=>{if(r.name||r.unitPrice){items++;qty+=+r.qty;sub+=(+r.qty)*(+r.unitPrice)}});
+  const docFee=+document.getElementById('docFee').value||0;
+  const dType=document.getElementById('discType').value;
+  const dVal=+document.getElementById('discVal').value||0;
+  let disc=dType==='percent'?(sub+docFee)*dVal/100:dVal;
+  if(disc<0)disc=0;
+  const total=Math.max(0,sub+docFee-disc);
+  const cash=+document.getElementById('cashRecv').value||0;
+  const paid=+document.getElementById('paidAmt').value||0;
+  const due=Math.max(0,total-paid);
+  const change=Math.max(0,cash-total);
 
-// --- View Invoice Modal with Signature Font ---
-function renderViewModal(){const inv=S.invoices.find(i=>i.id===S.viewInvId);if(!inv){S.viewInvId=null;render();return''}const due=Math.max(0,inv.totalPayable-(inv.cashReceived||0));const p=S.profile;return`<div class="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-slate-950 anim-fade"><div class="flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0"><button data-act="close-view" class="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 btn-tap">${icS('arrow',18)}Back</button><button data-act="edit-inv" data-id="${inv.id}" class="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold btn-tap">${icS('edit',14)}Edit</button></div><div class="flex-1 overflow-y-auto p-4 flex justify-center"><div class="w-full max-w-lg"><div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden anim-scale"><div class="bg-emerald-600 dark:bg-emerald-700 p-5 text-white"><div class="flex justify-between items-start"><div><p class="text-xs opacity-80 uppercase tracking-wider">Invoice</p><p class="text-xl font-bold">${inv.invoiceNumber}</p></div><div class="text-right"><p class="text-xs opacity-80">${fd(inv.date)}${inv.time?' at '+inv.time:''}</p><p class="text-2xl font-black mt-1">${fc(inv.totalPayable)}</p></div></div></div><div class="p-5 space-y-4"><div class="grid grid-cols-2 gap-4"><div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Patient</p><p class="text-sm font-semibold text-slate-800 dark:text-slate-200">${inv.patientName}</p></div>${inv.patientMobile?`<div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Mobile</p><a href="tel:${inv.patientMobile}" class="text-sm font-medium text-emerald-600 hover:underline">${inv.patientMobile}</a></div>`:''}${inv.patientEmail?`<div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Email</p><a href="mailto:${inv.patientEmail}" class="text-sm font-medium text-emerald-600 hover:underline truncate block">${inv.patientEmail}</a></div>`:''}${inv.patientAddress?`<div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Address</p><p class="text-sm text-slate-600 dark:text-slate-400">${inv.patientAddress}</p></div>`:''}${inv.rewardPoint?`<div><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Reward Points</p><p class="text-sm font-semibold text-amber-600">${inv.rewardPoint} pts</p></div>`:''}</div><div class="border-t border-gray-100 dark:border-slate-800 pt-4"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Items (${inv.items.length})</p><div class="space-y-2">${inv.items.map((it,i)=>`<div class="flex justify-between items-center text-sm"><div class="flex-1 min-w-0"><span class="text-slate-500 dark:text-slate-400 mr-2">${i+1}.</span><span class="font-medium text-slate-800 dark:text-slate-200">${it.name}</span></div><div class="flex items-center gap-3 flex-shrink-0 ml-4"><span class="text-slate-500 dark:text-slate-400">${it.quantity} x ${fc(it.unitPrice)}</span><span class="font-semibold text-slate-900 dark:text-white">${fc(it.quantity*it.unitPrice)}</span></div></div>`).join('')}</div></div><div class="border-t border-gray-100 dark:border-slate-800 pt-4 space-y-2 text-sm"><div class="flex justify-between"><span class="text-slate-500">Products Subtotal</span><span class="font-medium">${fc(inv.productsSubtotal)}</span></div><div class="flex justify-between"><span class="text-slate-500">Doctor Fee</span><span class="font-medium">${fc(inv.doctorFee)}</span></div>${inv.discount>0?`<div class="flex justify-between"><span class="text-slate-500">Discount</span><span class="font-medium text-red-500">-${fc(inv.discount)}</span></div>`:''}<div class="flex justify-between pt-2 border-t border-dashed border-gray-200 dark:border-slate-700"><span class="font-bold">Total Payable</span><span class="font-bold text-emerald-600">${fc(inv.totalPayable)}</span></div><div class="flex justify-between"><span class="text-slate-500">Cash Received</span><span class="font-medium">${fc(inv.cashReceived||0)}</span></div><div class="flex justify-between"><span class="text-slate-500">Due</span><span class="font-semibold ${due>0?'text-red-500':'text-emerald-600'}">${fc(due)}</span></div></div>${inv.notes?`<div class="border-t border-gray-100 dark:border-slate-800 pt-4"><p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Notes</p><p class="text-sm text-slate-600 dark:text-slate-400">${inv.notes}</p></div>`:''}<div class="border-t border-gray-100 dark:border-slate-800 pt-4 flex justify-between items-end"><p class="text-xs text-slate-400">Thank you for your visit!</p><div class="text-center">${p.signature?`<img src="${p.signature}" class="h-10 object-contain mb-1"/>`:`<p style="font-family:'Dancing Script',cursive; font-size:28px; color:#0f172a; line-height:1.2;">${p.doctorName||''}</p>`}<div class="w-28 border-b border-slate-300 dark:border-slate-600 mx-auto mb-1"></div><p class="text-[11px] font-semibold text-slate-600 dark:text-slate-400">${p.doctorName||''}</p>${p.doctorDegree?`<p class="text-[9px] text-slate-400">${p.doctorDegree}</p>`:''}</div></div></div></div></div></div>`}
+  document.getElementById('sItems').textContent=toBnNum(items);
+  document.getElementById('sQty').textContent=toBnNum(qty);
+  document.getElementById('sSub').textContent=money(sub);
+  document.getElementById('sDoc').textContent=money(docFee);
+  document.getElementById('sDisc').textContent='−'+money(disc);
+  countUp('sTotal',total);
+  document.getElementById('sDue').textContent=money(due);
+  countUp('changeOut',change);
+}
+function countUp(id,target){
+  const el=document.getElementById(id);
+  const cur=el._val||0;const start=performance.now();const dur=400;
+  function step(t){
+    const p=Math.min(1,(t-start)/dur);
+    const v=cur+(target-cur)*(1-Math.pow(1-p,3));
+    el.textContent=money(v);
+    if(p<1)requestAnimationFrame(step);else el._val=target;
+  }
+  requestAnimationFrame(step);
+}
 
-// --- Invoice HTML Template for Export (with Signature Font) ---
-function rInvHTML(inv){const p=S.profile;const due=Math.max(0,inv.totalPayable-(inv.cashReceived||0));return`<div style="padding:32px;font-family:'Inter',sans-serif;color:#1e293b;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;"><div style="display:flex;align-items:center;gap:14px;">${p.logo?`<img src="${p.logo}" style="width:52px;height:52px;border-radius:12px;object-fit:cover"/>`:`<div style="width:52px;height:52px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:white;font-weight:900;font-size:20px;">M</div>`}<div><h2 style="font-size:16px;font-weight:800;margin:0;color:#0f172a;">${p.chamberName||'Chamber'}</h2><p style="font-size:11px;color:#64748b;margin:2px 0 0;">${p.address||''}</p><p style="font-size:11px;color:#64748b;margin:0;">${p.phone||''} ${p.email?'| '+p.email:''}</p></div></div><div style="text-align:right;"><h1 style="font-size:24px;font-weight:900;letter-spacing:-1px;color:#0f172a;margin:0;">INVOICE</h1><p style="font-size:13px;font-weight:700;color:#059669;margin:4px 0 0;">${inv.invoiceNumber}</p><p style="font-size:11px;color:#94a3b8;margin:2px 0 0;">${fd(inv.date)}${inv.time?' at '+inv.time:''}</p></div></div><div style="background:#f8fafc;border-radius:10px;padding:14px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;"><div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Patient</p><p style="font-size:14px;font-weight:700;color:#1e293b;margin:0;">${inv.patientName||'—'}</p></div>${inv.patientMobile?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Mobile</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientMobile}</p></div>`:''}${inv.patientEmail?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Email</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientEmail}</p></div>`:''}${inv.patientAddress?`<div><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Address</p><p style="font-size:13px;color:#475569;margin:0;">${inv.patientAddress}</p></div>`:''}</div><table style="width:100%;border-collapse:collapse;margin-bottom:16px;"><thead><tr style="border-bottom:2px solid #e2e8f0;"><th style="text-align:left;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">SL</th><th style="text-align:left;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Product / Medicine</th><th style="text-align:center;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Qty</th><th style="text-align:right;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 6px 6px 0;">Unit Price</th><th style="text-align:right;font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;padding:0 0 6px;">Subtotal</th></tr></thead><tbody>${inv.items.map((it,i)=>`<tr style="border-bottom:1px solid #f1f5f9;"><td style="padding:8px 6px 8px 0;font-size:12px;color:#94a3b8;">${i+1}</td><td style="padding:8px 6px;font-size:13px;font-weight:600;color:#1e293b;">${it.name||'—'}</td><td style="padding:8px 6px;font-size:13px;color:#475569;text-align:center;">${it.quantity}</td><td style="padding:8px 6px;font-size:13px;color:#475569;text-align:right;">${fc(it.unitPrice)}</td><td style="padding:8px 0;font-size:13px;font-weight:700;color:#1e293b;text-align:right;">${fc(it.quantity*it.unitPrice)}</td></tr>`).join('')}</tbody></table><div style="display:flex;justify-content:flex-end;margin-bottom:20px;"><div style="width:260px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Products Subtotal</span><span style="font-weight:600;color:#334155;">${fc(inv.productsSubtotal)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Doctor Fee</span><span style="font-weight:600;color:#334155;">${fc(inv.doctorFee)}</span></div>${inv.discount>0?`<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;"><span style="color:#64748b;">Discount</span><span style="font-weight:600;color:#ef4444;">-${fc(inv.discount)}</span></div>`:''}<div style="border-top:2px solid #e2e8f0;padding-top:6px;display:flex;justify-content:space-between;"><span style="font-size:15px;font-weight:800;color:#0f172a;">TOTAL PAYABLE</span><span style="font-size:17px;font-weight:900;color:#059669;">${fc(inv.totalPayable)}</span></div><div style="margin-top:8px;padding-top:8px;border-top:1px dashed #e2e8f0;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span style="color:#64748b;">Cash Received</span><span style="font-weight:600;color:#334155;">${fc(inv.cashReceived||0)}</span></div><div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:#64748b;">Due</span><span style="font-weight:700;color:${due>0?'#ef4444':'#059669'}">${fc(due)}</span></div></div></div></div>${inv.notes?`<div style="background:#f8fafc;border-radius:8px;padding:10px;margin-bottom:16px;"><p style="font-size:9px;font-weight:700;color:#94a3b8;text-transform:uppercase;margin:0 0 3px;">Notes</p><p style="font-size:12px;color:#475569;margin:0;">${inv.notes}</p></div>`:''}<div style="display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #e2e8f0;padding-top:16px;"><div><p style="font-size:11px;color:#94a3b8;margin:0;">Thank you for your visit!</p><p style="font-size:9px;color:#cbd5e1;margin:3px 0 0;">Generated by ${p.appName||'MedBill Pro'}</p></div><div style="text-align:center;">${p.signature?`<img src="${p.signature}" style="height:40px;margin-bottom:4px;object-fit:contain"/>`:`<p style="font-family:'Dancing Script',cursive; font-size:32px; color:#0f172a; margin:0 0 4px;">${p.doctorName||''}</p>`}<div style="width:140px;border-bottom:1px solid #94a3b8;margin-bottom:4px;margin-left:auto;margin-right:auto;"></div><p style="font-size:11px;font-weight:600;color:#64748b;margin:0;">${p.doctorName||''}</p>${p.doctorDegree?`<p style="font-size:9px;color:#94a3b8;margin:1px 0 0;">${p.doctorDegree}</p>`:''}</div></div></div>`}
+/* ============================================================
+   Doctors
+   ============================================================ */
+function refreshDoctors(){
+  const s=document.getElementById('docSelect');
+  s.innerHTML='<option value="">— নেই —</option>'+doctors.map((d,i)=>`<option value="${i}">${d.name} (${money(d.fee)})</option>`).join('');
+}
+function onDocSelect(){
+  const i=document.getElementById('docSelect').value;
+  if(i!=='')document.getElementById('docFee').value=doctors[i].fee;
+  calcTotals();
+}
 
-function renderSettingsModal(){const p=S.profile;const fields=[{key:'appName',label:'App Name',val:p.appName,icon:'gear'},{key:'chamberName',label:'Chamber / Pharmacy Name',val:p.chamberName,icon:'map'},{key:'address',label:'Address',val:p.address,icon:'map'},{key:'phone',label:'Phone Number',val:p.phone,icon:'phone'},{key:'email',label:'Email',val:p.email,icon:'mail'},{key:'doctorName',label:'Doctor Name',val:p.doctorName,icon:'user'},{key:'doctorDegree',label:'Doctor Degree',val:p.doctorDegree,icon:'award'},{key:'currency',label:'Currency Code',val:p.currency,icon:'dollar'},{key:'sym',label:'Currency Symbol',val:p.sym,icon:'dollar'}];return`<div class="fixed inset-0 z-50 flex flex-col sm:flex-row bg-white dark:bg-slate-900 anim-slide-up" id="settings-modal"><div class="hidden sm:flex flex-col w-64 bg-gray-50 dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 p-4 flex-shrink-0"><div class="flex items-center justify-between mb-6"><h2 class="text-base font-bold text-slate-900 dark:text-white">Settings</h2><button data-act="close-settings" class="w-8 h-8 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-400">${icS('x',18)}</button></div><nav class="space-y-1"><button data-act="stab" data-stab="profile" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='profile'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('steth',16)}Profile</button><button data-act="stab" data-stab="data" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='data'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('dl',16)}Data</button><button data-act="stab" data-stab="theme" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${S.settingsTab==='theme'?'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400':'text-slate-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700'}">${icS('system',16)}Theme</button></nav></div><div class="sm:hidden flex items-center justify-between h-14 px-4 border-b border-gray-100 dark:border-slate-800 flex-shrink-0"><h2 class="text-base font-bold text-slate-900 dark:text-white">Settings</h2><button data-act="close-settings" class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-400">${icS('x',18)}</button></div><div class="sm:hidden flex border-b border-gray-100 dark:border-slate-800"><button data-act="stab" data-stab="profile" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='profile'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Profile</button><button data-act="stab" data-stab="data" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='data'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Data</button><button data-act="stab" data-stab="theme" class="flex-1 py-2.5 text-xs font-semibold text-center ${S.settingsTab==='theme'?'text-emerald-600 border-b-2 border-emerald-600':'text-slate-400'}">Theme</button></div><div class="flex-1 overflow-y-auto p-4 sm:p-6"><div class="max-w-xl mx-auto">${S.settingsTab==='profile'?`<div class="grid grid-cols-2 gap-4 mb-6"><div class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center border border-gray-100 dark:border-slate-700"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Logo</p>${p.logo?`<img src="${p.logo}" class="w-16 h-16 rounded-xl object-cover mx-auto mb-2 border border-gray-200 dark:border-slate-600"/>`:``}<div class="flex gap-2 justify-center"><button data-act="upload-logo" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Upload</button>${p.logo?`<button data-act="rm-logo" class="text-xs font-semibold text-red-500">Remove</button>`:''}</div></div><div class="bg-gray-50 dark:bg-slate-800/50 rounded-2xl p-4 text-center border border-gray-100 dark:border-slate-700"><p class="text-[10px] font-bold text-slate-400 uppercase mb-2">Signature</p>${p.signature?`<img src="${p.signature}" class="h-12 object-contain mx-auto mb-2"/>`:``}<div class="flex gap-2 justify-center"><button data-act="upload-sig" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">Upload</button>${p.signature?`<button data-act="rm-sig" class="text-xs font-semibold text-red-500">Remove</button>`:''}</div></div></div><div class="space-y-1">${fields.map(f=>`<div class="flex items-center justify-between py-3 px-4 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors group" data-field="${f.key}"><div class="flex items-center gap-3 flex-1 min-w-0"><span class="text-slate-400 dark:text-slate-500">${icS(f.icon,16)}</span><div class="min-w-0 flex-1"><p class="text-[10px] font-bold text-slate-400 uppercase">${f.label}</p><p class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate field-display">${f.val||'—'}</p><input type="text" class="hidden w-full px-2 py-1 text-sm border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 dark:text-white field-input" value="${(f.val||'').replace(/"/g,'&quot;')}"/></div></div><button class="field-edit-btn w-8 h-8 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/30 flex items-center justify-center text-slate-300 group-hover:text-emerald-500 transition-colors btn-tap" data-act="edit-field" data-key="${f.key}">${icS('edit',14)}</button></div>`).join('')}</div>`:S.settingsTab==='data'?`<div class="space-y-3"><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Export Data</h3><button data-act="exp-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('dl',16)}Export JSON</button><button data-act="exp-xls" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('xls',16)}Export Excel</button><button data-act="exp-csv" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('note',16)}Export CSV</button><div class="border-t border-gray-100 dark:border-slate-800 my-4"></div><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-2">Import Data</h3><button data-act="imp-json" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-sm font-medium btn-tap">${icS('ul',16)}Import JSON File</button><div class="border-t border-gray-100 dark:border-slate-800 my-4"></div><h3 class="text-sm font-bold text-red-600 mb-2">Danger Zone</h3><button data-act="clear-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 text-sm font-medium btn-tap">${icS('trash',16)}Clear All Data</button></div>`:`<div class="space-y-3"><h3 class="text-sm font-bold text-slate-900 dark:text-white mb-4">Appearance</h3><button data-act="set-theme" data-t="light" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='light'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center">${icS('sun',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='light'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">Light Mode</p><p class="text-xs text-slate-400">Bright and clean</p></div>${S.theme==='light'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button><button data-act="set-theme" data-t="dark" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='dark'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center">${icS('moon',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='dark'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">Dark Mode</p><p class="text-xs text-slate-400">Easy on the eyes</p></div>${S.theme==='dark'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button><button data-act="set-theme" data-t="system" class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border ${S.theme==='system'?'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20':'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'} transition-colors btn-tap"><span class="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/40 text-violet-600 flex items-center justify-center">${icS('system',20)}</span><div class="text-left"><p class="text-sm font-semibold ${S.theme==='system'?'text-emerald-700 dark:text-emerald-400':'text-slate-700 dark:text-slate-300'}">System</p><p class="text-xs text-slate-400">Follow device settings</p></div>${S.theme==='system'?`<span class="ml-auto text-emerald-600">${icS('chk',18)}</span>`:''}</button></div>`}</div></div></div>`}
+/* ============================================================
+   Patient suggest / history
+   ============================================================ */
+function patientSuggest(el){
+  const list=document.getElementById('pAcList');
+  const q=el.value.trim();
+  if(!q){list.classList.remove('show');document.getElementById('pHistory').innerHTML='';return}
+  const m=patients.filter(p=>p.mobile.includes(q)).slice(0,5);
+  if(!m.length){list.classList.remove('show');return}
+  list.innerHTML=m.map(p=>`<div class="ac-item" onclick="pickPatient('${p.mobile}')">${p.name||'নামহীন'}<small>${p.mobile}</small></div>`).join('');
+  list.classList.add('show');
+}
+function pickPatient(mobile){
+  const p=patients.find(x=>x.mobile===mobile);if(!p)return;
+  document.getElementById('pMobile').value=p.mobile;
+  document.getElementById('pName').value=p.name||'';
+  document.getElementById('pEmail').value=p.email||'';
+  document.getElementById('pAddress').value=p.address||'';
+  document.getElementById('pReward').value=p.rewardPoints||0;
+  document.getElementById('pAcList').classList.remove('show');
+  showPatientHistory(mobile);
+}
+function showPatientHistory(mobile){
+  const his=invoices.filter(i=>i.patient.mobile===mobile);
+  const el=document.getElementById('pHistory');
+  if(!his.length){el.innerHTML='';return}
+  const totalSpent=his.reduce((s,i)=>s+i.paid,0);
+  const last=his[his.length-1].date;
+  el.innerHTML=`<div style="background:var(--surface2);padding:10px;border-radius:10px;font-size:12px;color:var(--muted)">
+    📋 আগের ভিজিট: <b>${toBnNum(his.length)}</b> · মোট কেনাকাটা: <b>${money(totalSpent)}</b> · শেষ ভিজিট: ${last}</div>`;
+}
 
-function getFormItems(){const rows=document.querySelectorAll('#items-box .item-row');const items=[];rows.forEach(r=>{items.push({name:r.querySelector('[data-f="name"]')?.value||'',quantity:parseInt(r.querySelector('[data-f="quantity"]')?.value)||0,unitPrice:parseFloat(r.querySelector('[data-f="unitPrice"]')?.value)||0})});return items}
-function recalc(){const items=getFormItems();const docFee=parseFloat(document.getElementById('i-docfee')?.value)||0;const disc=parseFloat(document.getElementById('i-disc')?.value)||0;const cash=parseFloat(document.getElementById('i-cash')?.value)||0;const sum=calcSummary(items,docFee,disc);const due=Math.max(0,sum.totalPayable-cash);const rows=document.querySelectorAll('#items-box .item-row');rows.forEach(r=>{const q=parseFloat(r.querySelector('[data-f="quantity"]')?.value)||0;const p=parseFloat(r.querySelector('[data-f="unitPrice"]')?.value)||0;const sub=r.querySelector('.rsub');if(sub)sub.textContent=fc(q*p)});const el=id=>document.getElementById(id);if(el('sum-items'))el('sum-items').textContent=sum.totalItems;if(el('sum-qty'))el('sum-qty').textContent=sum.totalQty;if(el('sum-psub'))el('sum-psub').textContent=fc(sum.productsSubtotal);if(el('sum-dfee'))el('sum-dfee').textContent=fc(sum.doctorFee);if(el('sum-total'))el('sum-total').textContent=fc(sum.totalPayable);if(el('sum-paid'))el('sum-paid').textContent=fc(cash);if(el('sum-due'))el('sum-due').textContent=fc(due)}
+/* ============================================================
+   Save Invoice
+   ============================================================ */
+function saveInvoice(){
+  const rows=currentRows.filter(r=>r&&(r.name||r.unitPrice));
+  if(!rows.length){toast('অন্তত একটি প্রোডাক্ট যোগ করুন',true);return}
+  const dType=document.getElementById('discType').value;
+  const dVal=+document.getElementById('discVal').value||0;
+  const sub=rows.reduce((s,r)=>s+r.qty*r.unitPrice,0);
+  const docFee=+document.getElementById('docFee').value||0;
+  let disc=dType==='percent'?(sub+docFee)*dVal/100:dVal;
+  const total=Math.max(0,sub+docFee-disc);
+  const cash=+document.getElementById('cashRecv').value||0;
+  const paid=+document.getElementById('paidAmt').value||0;
 
-document.addEventListener('click',function(e){const rippleHost=e.target.closest('.ripple-host');if(rippleHost){const circle=document.createElement('span');circle.className='ripple-circle';const rect=rippleHost.getBoundingClientRect();const size=Math.max(rect.width,rect.height);circle.style.width=circle.style.height=size+'px';circle.style.left=(e.clientX-rect.left-size/2)+'px';circle.style.top=(e.clientY-rect.top-size/2)+'px';rippleHost.appendChild(circle);setTimeout(()=>circle.remove(),600)}const nav=e.target.closest('[data-tab]');const act=e.target.closest('[data-act]');if(nav){e.preventDefault();S.tab=nav.dataset.tab;saveS();render();return}if(!act)return;const a=act.dataset.act;const id=act.dataset.id;switch(a){case 'new-inv':S.editId=null;S.showInvoice=true;render();break;case 'close-inv':S.showInvoice=false;S.editId=null;render();break;case 'close-view':S.viewInvId=null;render();break;case 'open-settings':S.showSettings=true;render();break;case 'close-settings':S.showSettings=false;render();break;case 'stab':S.settingsTab=act.dataset.stab;render();break;case 'toggle-theme':if(S.theme==='light')setTheme('dark');else if(S.theme==='dark')setTheme('system');else setTheme('light');break;case 'set-theme':setTheme(act.dataset.t);render();break;case 'add-row':{const box=document.getElementById('items-box');if(!box)return;const cur=getFormItems();cur.push({name:'',quantity:1,unitPrice:0});box.insertAdjacentHTML('beforeend',rItemRow({name:'',quantity:1,unitPrice:0},cur.length-1));recalc();break}case 'rm-row':{const box=document.getElementById('items-box');if(!box)return;const rows=box.querySelectorAll('.item-row');if(rows.length<=1){toast('At least one item required','warning');return}const idx=parseInt(act.dataset.idx);rows[idx]?.remove();box.querySelectorAll('.item-row').forEach((r,i)=>{r.dataset.idx=i;const rb=r.querySelector('[data-act="rm-row"]');if(rb)rb.dataset.idx=i;r.querySelector('span').textContent=i+1});recalc();break}case 'save-inv':{const pn=document.getElementById('i-pname')?.value.trim();if(!pn){toast('Patient name is required','error');document.getElementById('i-pname')?.focus();return}const items=getFormItems().filter(i=>i.name.trim());if(!items.length){toast('Add at least one medicine/item','error');return}const docFee=parseFloat(document.getElementById('i-docfee')?.value)||0;const disc=parseFloat(document.getElementById('i-disc')?.value)||0;const cash=parseFloat(document.getElementById('i-cash')?.value)||0;const sum=calcSummary(items,docFee,disc);const inv={id:S.editId||gid(),invoiceNumber:document.getElementById('i-invnum')?.value||'INV-'+S.nextNum,date:document.getElementById('i-date')?.value||today(),time:document.getElementById('i-time')?.value||nowTime(),notes:document.getElementById('i-notes')?.value.trim()||'',patientName:pn,patientAddress:document.getElementById('i-paddr')?.value.trim()||'',patientMobile:document.getElementById('i-pmob')?.value.trim()||'',patientEmail:document.getElementById('i-pemail')?.value.trim()||'',rewardPoint:parseInt(document.getElementById('i-reward')?.value)||0,items,doctorFee:docFee,discount:disc,cashReceived:cash,...sum,createdAt:S.editId?(S.invoices.find(i=>i.id===S.editId)?.createdAt||new Date().toISOString()):new Date().toISOString()};if(S.editId){const idx=S.invoices.findIndex(i=>i.id===S.editId);if(idx!==-1)S.invoices[idx]=inv;S.editId=null;toast('Invoice updated','success')}else{S.invoices.push(inv);S.nextNum++;toast('Invoice saved','success')}S.showInvoice=false;S.viewInvId=inv.id;saveS();render();break}case 'clear-inv':{S.editId=null;S.showInvoice=false;saveS();setTimeout(()=>{S.showInvoice=true;render()},50);break}case 'edit-inv':S.editId=id;S.showInvoice=true;S.viewInvId=null;render();break;case 'view-inv':S.viewInvId=id;render();break;case 'del-inv':confirm2('Delete this invoice permanently?',()=>{S.invoices=S.invoices.filter(i=>i.id!==id);saveS();toast('Invoice deleted','info');if(S.viewInvId===id)S.viewInvId=null;render()});break;case 'share-wa':shareWA(id);break;case 'exp-pdf':expPDF(id);break;case 'exp-img':expImg(id);break;case 'edit-field':{const key=act.dataset.key;const container=act.closest('[data-field]');const display=container.querySelector('.field-display');const input=container.querySelector('.field-input');if(input.classList.contains('hidden')){input.classList.remove('hidden');display.classList.add('hidden');input.focus();act.innerHTML=icS('chk',14)}else{S.profile[key]=input.value.trim();saveS();display.textContent=input.value.trim()||'—';input.classList.add('hidden');display.classList.remove('hidden');act.innerHTML=icS('edit',14);toast('Updated','success')}break}case 'upload-logo':document.getElementById('f-logo')?.click();break;case 'rm-logo':S.profile.logo=null;saveS();toast('Logo removed','info');render();break;case 'upload-sig':document.getElementById('f-sig')?.click();break;case 'rm-sig':S.profile.signature=null;saveS();toast('Signature removed','info');render();break;case 'exp-json':expAllJSON();break;case 'exp-xls':expAllXLS();break;case 'exp-csv':expAllCSV();break;case 'imp-json':document.getElementById('f-json')?.click();break;case 'clear-all':confirm2('This will permanently delete ALL data. Continue?',()=>{S.invoices=[];S.nextNum=1001;saveS();toast('All data cleared','info');render()});break}});
+  const patient={
+    name:document.getElementById('pName').value.trim(),
+    mobile:document.getElementById('pMobile').value.trim(),
+    address:document.getElementById('pAddress').value.trim(),
+    email:document.getElementById('pEmail').value.trim(),
+    rewardPoints:+document.getElementById('pReward').value||0
+  };
+  const inv={
+    id:nextInvNo(),
+    date:document.getElementById('invDate').value,
+    time:document.getElementById('invTime').value,
+    patient,
+    products:rows.map(r=>({name:r.name,qty:r.qty,unitPrice:r.unitPrice,subtotal:r.qty*r.unitPrice})),
+    doctorFee:docFee,
+    discount:{type:dType,value:dVal,amount:disc},
+    totalPayable:total,
+    paid,due:Math.max(0,total-paid),
+    paymentMethod:'cash',
+    cashReceived:cash,
+    changeReturn:Math.max(0,cash-total),
+    notes:document.getElementById('invNote').value.trim()
+  };
+  invoices.push(inv);DB.set('invoices',invoices);
 
-document.addEventListener('input',function(e){if(e.target.closest('#items-box')&&e.target.matches('[data-f]'))recalc();if(e.target.id==='i-docfee')recalc();if(e.target.id==='i-disc')recalc();if(e.target.id==='i-cash')recalc();if(e.target.id==='p-search'){S.search=e.target.value;const m=document.querySelector('.pb-24');if(m)m.innerHTML=renderContent()+renderBottomNav()}});
-document.addEventListener('change',function(e){if(e.target.id==='p-filter'){S.filter=e.target.value;const m=document.querySelector('.pb-24');if(m)m.innerHTML=renderContent()+renderBottomNav()}});
+  // ইনভেন্টরি আপডেট
+  rows.forEach(r=>{
+    const p=products.find(x=>x.name===r.name);
+    if(p){p.stock=Math.max(0,p.stock-r.qty)}
+    else{products.push({name:r.name,price:r.unitPrice,stock:0,thresh:10,category:'অন্যান্য',expiry:''})}
+  });
+  DB.set('products',products);
 
-document.getElementById('f-logo').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','error');return}const r=new FileReader();r.onload=ev=>{S.profile.logo=ev.target.result;saveS();toast('Logo uploaded','success');render()};r.readAsDataURL(f);e.target.value=''});
-document.getElementById('f-sig').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;if(f.size>2*1024*1024){toast('Max 2MB','error');return}const r=new FileReader();r.onload=ev=>{S.profile.signature=ev.target.result;saveS();toast('Signature uploaded','success');render()};r.readAsDataURL(f);e.target.value=''});
-document.getElementById('f-json').addEventListener('change',function(e){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);const invs=Array.isArray(d)?d:(d.invoices||[]);let c=0;invs.forEach(inv=>{if(inv.id&&inv.invoiceNumber&&inv.patientName&&!S.invoices.find(i=>i.id===inv.id)){S.invoices.push(inv);c++}});const mx=S.invoices.reduce((m,i)=>{const n=parseInt(i.invoiceNumber?.replace(/\D/g,''))||0;return n>m?n:m},S.nextNum);S.nextNum=mx+1;saveS();toast(`Imported ${c} invoice${c!==1?'s':''}`,'success');render()}catch(err){toast('Invalid JSON file','error')}};r.readAsText(f);e.target.value=''});
+  // রোগী সেভ / আপডেট
+  if(patient.mobile){
+    const ex=patients.find(p=>p.mobile===patient.mobile);
+    if(ex)Object.assign(ex,patient);else patients.push(patient);
+    DB.set('patients',patients);
+  }
 
-function shareWA(id){const inv=S.invoices.find(i=>i.id===id);if(!inv)return;const p=S.profile;const ph=inv.patientMobile?inv.patientMobile.replace(/[^0-9+]/g,''):'';const msg=encodeURIComponent(`Hello ${inv.patientName}, thank you for visiting ${p.chamberName||'our chamber'}. Your invoice ${inv.invoiceNumber} for ${p.currency} ${inv.totalPayable.toFixed(2)} is ready. Regards, ${p.doctorName||'Doctor'}.`);window.open(ph?`https://wa.me/${ph.replace('+','')}?text=${msg}`:`https://wa.me/?text=${msg}`,'_blank');toast('Opening WhatsApp...','success')}
+  counter++;DB.set('counter',counter);
+  toast('✅ ইনভয়েস সেভ হয়েছে: '+inv.id);
+  lowStockCheck();
+  clearForm();
+}
+function lowStockCheck(){
+  const low=products.filter(p=>p.stock<=p.thresh);
+  if(low.length)setTimeout(()=>toast('⚠️ '+toBnNum(low.length)+' টি প্রোডাক্ট লো-স্টকে!',true),2800);
+}
+function clearForm(){
+  currentRows=[];document.getElementById('prodList').innerHTML='';
+  ['pName','pMobile','pEmail','pAddress','invNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pReward').value=0;
+  document.getElementById('docFee').value=0;
+  document.getElementById('discVal').value=0;
+  document.getElementById('cashRecv').value=0;
+  document.getElementById('paidAmt').value=0;
+  document.getElementById('docSelect').value='';
+  document.getElementById('pHistory').innerHTML='';
+  addProdRow();
+  refreshInvNo();initDateTime();calcTotals();
+}
 
-function expPDF(id){const inv=S.invoices.find(i=>i.id===id);if(!inv)return;toast('Generating PDF...','info');const box=document.getElementById('inv-export');box.innerHTML=rInvHTML(inv);setTimeout(()=>{html2canvas(box,{scale:1.5,useCORS:true,backgroundColor:'#ffffff',logging:false}).then(canvas=>{const{jsPDF}=window.jspdf;const pdf=new jsPDF('p','mm','a4');const iw=210;const ih=(canvas.height*iw)/canvas.width;const imgData=canvas.toDataURL('image/jpeg',0.75);pdf.addImage(imgData,'JPEG',0,0,iw,ih);pdf.save(inv.invoiceNumber+'.pdf');box.innerHTML='';toast('PDF downloaded','success')}).catch(()=>{box.innerHTML='';toast('PDF failed','error')})},300)}
+/* ============================================================
+   History + Dashboard
+   ============================================================ */
+function setHistFilter(el){
+  document.querySelectorAll('#view-history .chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');histFilter=el.dataset.f;renderHistory();
+}
+function renderHistory(){
+  const q=(document.getElementById('histSearch').value||'').toLowerCase();
+  let list=[...invoices].reverse().filter(i=>{
+    if(histFilter==='paid'&&i.due>0)return false;
+    if(histFilter==='due'&&i.due<=0)return false;
+    if(q&&!i.id.toLowerCase().includes(q)&&!(i.patient.name||'').toLowerCase().includes(q))return false;
+    return true;
+  });
+  const el=document.getElementById('historyList');
+  if(!list.length){el.innerHTML='<div class="empty">কোনো ইনভয়েস নেই</div>';return}
+  el.innerHTML=list.map(i=>{
+    const badge=i.due>0?`<span class="badge due">বাকি ${money(i.due)}</span>`:'<span class="badge paid">পরিশোধিত</span>';
+    return `<div class="list-item">
+      <div class="info">
+        <div class="t">${i.patient.name||'অজ্ঞাত'} ${badge}</div>
+        <div class="s en">${i.id} · ${i.date} · ${toBnNum(i.products.length)} আইটেম</div>
+      </div>
+      <div>
+        <div class="amt">${money(i.totalPayable)}</div>
+        <div style="display:flex;gap:4px;margin-top:6px;justify-content:flex-end">
+          <div class="iconbtn" onclick="dupInvoice('${i.id}')" title="ডুপ্লিকেট">⧉</div>
+          <div class="iconbtn del" onclick="delInvoice('${i.id}')" title="মুছুন">✕</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function delInvoice(id){
+  if(!confirm('এই ইনভয়েস মুছবেন?'))return;
+  invoices=invoices.filter(i=>i.id!==id);DB.set('invoices',invoices);
+  renderHistory();renderDashboard();toast('ইনভয়েস মুছে ফেলা হয়েছে');
+}
+function dupInvoice(id){
+  const i=invoices.find(x=>x.id===id);if(!i)return;
+  clearForm();currentRows=[];document.getElementById('prodList').innerHTML='';
+  i.products.forEach(p=>addProdRow({name:p.name,qty:p.qty,unitPrice:p.unitPrice}));
+  document.getElementById('pName').value=i.patient.name;
+  document.getElementById('pMobile').value=i.patient.mobile;
+  document.getElementById('docFee').value=i.doctorFee;
+  document.querySelector('.navbtn[data-view="new"]').click();
+  calcTotals();toast('ডুপ্লিকেট তৈরি হয়েছে — সেভ করুন');
+}
+function renderDashboard(){
+  const today=new Date().toISOString().slice(0,10);
+  const now=new Date();
+  const weekAgo=new Date(now-6*864e5).toISOString().slice(0,10);
+  const monthPrefix=today.slice(0,7);
+  let tSale=0,wSale=0,mSale=0,totalDue=0;
+  invoices.forEach(i=>{
+    if(i.date===today)tSale+=i.totalPayable;
+    if(i.date>=weekAgo)wSale+=i.totalPayable;
+    if(i.date&&i.date.startsWith(monthPrefix))mSale+=i.totalPayable;
+    totalDue+=i.due;
+  });
+  document.getElementById('dashStats').innerHTML=`
+    <div class="stat"><div class="v">${money(tSale)}</div><div class="l">আজকের বিক্রি</div></div>
+    <div class="stat"><div class="v">${money(wSale)}</div><div class="l">এই সপ্তাহ</div></div>
+    <div class="stat"><div class="v">${money(mSale)}</div><div class="l">এই মাস</div></div>
+    <div class="stat"><div class="v">${money(totalDue)}</div><div class="l">মোট বাকি</div></div>`;
 
-function expImg(id){const inv=S.invoices.find(i=>i.id===id);if(!inv)return;toast('Generating image...','info');const box=document.getElementById('inv-export');box.innerHTML=rInvHTML(inv);setTimeout(()=>{html2canvas(box,{scale:2,useCORS:true,backgroundColor:'#ffffff'}).then(canvas=>{const a=document.createElement('a');a.download=inv.invoiceNumber+'.png';a.href=canvas.toDataURL('image/png');a.click();box.innerHTML='';toast('Image downloaded','success')}).catch(()=>{box.innerHTML='';toast('Image failed','error')})},300)}
-function expAllJSON(){if(!S.invoices.length){toast('No data','warning');return}const d=JSON.stringify(S.invoices,null,2);const b=new Blob([d],{type:'application/json'});const a=document.createElement('a');a.download='medbill_'+today()+'.json';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);toast('JSON exported','success')}
-function expAllXLS(){if(!S.invoices.length){toast('No data','warning');return}try{const rows=S.invoices.map(i=>({'Invoice #':i.invoiceNumber,Date:i.date,Time:i.time||'',Patient:i.patientName,Mobile:i.patientMobile||'','Total Payable':i.totalPayable}));const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Invoices');XLSX.writeFile(wb,'medbill_'+today()+'.xlsx');toast('Excel exported','success')}catch(e){toast('Export failed','error')}}
-function expAllCSV(){if(!S.invoices.length){toast('No data','warning');return}try{const hdr=['Invoice#','Date','Patient','Mobile','TotalPayable'];const rows=S.invoices.map(i=>[i.invoiceNumber,i.date,i.patientName,i.patientMobile||'',i.totalPayable]);const csv=[hdr,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');const b=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.download='medbill_'+today()+'.csv';a.href=URL.createObjectURL(b);a.click();URL.revokeObjectURL(a.href);toast('CSV exported','success')}catch(e){toast('Export failed','error')}}
+  // week chart
+  const days=[];
+  for(let d=6;d>=0;d--){
+    const dt=new Date(now-d*864e5).toISOString().slice(0,10);
+    const sum=invoices.filter(i=>i.date===dt).reduce((s,i)=>s+i.totalPayable,0);
+    days.push({label:dt.slice(8),sum});
+  }
+  const max=Math.max(1,...days.map(d=>d.sum));
+  document.getElementById('weekChart').innerHTML=days.map(d=>
+    `<div class="bar" style="height:${(d.sum/max*100)||2}%"><span>${toBnNum(d.label)}</span></div>`).join('');
 
-render();
+  // top products
+  const count={};
+  invoices.forEach(i=>i.products.forEach(p=>count[p.name]=(count[p.name]||0)+p.qty));
+  const top=Object.entries(count).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('topProducts').innerHTML=top.length?top.map(([n,q],idx)=>
+    `<div class="sumrow"><span class="lbl">${toBnNum(idx+1)}. ${n}</span><span class="en">${toBnNum(q)} টি</span></div>`).join('')
+    :'<div class="empty">কোনো ডেটা নেই</div>';
+}
+
+/* ============================================================
+   Inventory / Stock
+   ============================================================ */
+function saveProduct(){
+  const name=document.getElementById('invName').value.trim();
+  if(!name){toast('নাম দিন',true);return}
+  const ex=products.find(p=>p.name===name);
+  const data={
+    name,price:+document.getElementById('invPrice').value||0,
+    stock:+document.getElementById('invStock').value||0,
+    thresh:+document.getElementById('invThresh').value||10,
+    category:document.getElementById('invCat').value,
+    expiry:document.getElementById('invExp').value
+  };
+  if(ex)Object.assign(ex,data);else products.push(data);
+  DB.set('products',products);
+  ['invName','invPrice','invStock','invExp'].forEach(id=>document.getElementById(id).value='');
+  toast('💾 প্রোডাক্ট সেভ হয়েছে');renderStock();
+}
+function renderStock(){
+  const q=(document.getElementById('stockSearch').value||'').toLowerCase();
+  const list=products.filter(p=>p.name.toLowerCase().includes(q));
+  const el=document.getElementById('stockList');
+  if(!list.length){el.innerHTML='<div class="empty">কোনো প্রোডাক্ট নেই</div>';return}
+  const soon=new Date(Date.now()+30*864e5).toISOString().slice(0,10);
+  el.innerHTML=list.map((p,i)=>{
+    const low=p.stock<=p.thresh?'<span class="badge low">লো স্টক</span>':'';
+    const exp=p.expiry&&p.expiry<=soon?'<span class="badge exp">এক্সপায়ারি নিকট</span>':'';
+    return `<div class="list-item">
+      <div class="info"><div class="t">${p.name} ${low}${exp}</div>
+      <div class="s">${p.category} · ${money(p.price)} ${p.expiry?'· Exp: '+p.expiry:''}</div></div>
+      <div class="amt">${toBnNum(p.stock)} টি
+      <div style="margin-top:6px"><div class="iconbtn del" onclick="delProduct(${products.indexOf(p)})">✕</div></div></div>
+    </div>`;
+  }).join('');
+}
+function delProduct(idx){
+  if(!confirm('প্রোডাক্ট মুছবেন?'))return;
+  products.splice(idx,1);DB.set('products',products);renderStock();toast('মুছে ফেলা হয়েছে');
+}
+function renderPatients(){
+  const el=document.getElementById('patientsList');
+  if(!patients.length){el.innerHTML='<div class="empty">কোনো রোগী নেই</div>';return}
+  el.innerHTML=patients.map(p=>{
+    const his=invoices.filter(i=>i.patient.mobile===p.mobile);
+    const spent=his.reduce((s,i)=>s+i.paid,0);
+    return `<div class="list-item"><div class="info">
+      <div class="t">${p.name||'নামহীন'}</div>
+      <div class="s en">${p.mobile} · ${toBnNum(his.length)} ভিজিট · ${money(spent)}</div>
+    </div></div>`;
+  }).join('');
+}
+
+/* ============================================================
+   Settings
+   ============================================================ */
+function loadSettings(){
+  document.getElementById('setName').value=settings.name;
+  document.getElementById('setAddr1').value=settings.addr1;
+  document.getElementById('setAddr2').value=settings.addr2;
+  document.getElementById('setPhone').value=settings.phone;
+  document.getElementById('setEmail').value=settings.email;
+  document.getElementById('setThanks').value=settings.thanks;
+  document.getElementById('setPrefix').value=settings.prefix;
+  document.getElementById('setStart').value=settings.start;
+  document.querySelectorAll('[data-num]').forEach(c=>c.classList.toggle('on',c.dataset.num===settings.numFmt));
+  applyBranding();
+}
+function saveSettings(){
+  settings.name=document.getElementById('setName').value;
+  settings.addr1=document.getElementById('setAddr1').value;
+  settings.addr2=document.getElementById('setAddr2').value;
+  settings.phone=document.getElementById('setPhone').value;
+  settings.email=document.getElementById('setEmail').value;
+  settings.thanks=document.getElementById('setThanks').value;
+  settings.prefix=document.getElementById('setPrefix').value;
+  settings.start=+document.getElementById('setStart').value||1;
+  DB.set('settings',settings);
+  applyBranding();refreshInvNo();
+  toast('✅ সেটিংস সেভ হয়েছে');
+}
+function setNumFmt(el){
+  document.querySelectorAll('[data-num]').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');settings.numFmt=el.dataset.num;DB.set('settings',settings);
+  calcTotals();toast('সংখ্যা ফরম্যাট: '+(el.dataset.num==='bn'?'বাংলা':'English'));
+}
+function onLogoUpload(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{settings.logo=ev.target.result;DB.set('settings',settings);applyBranding()};
+  r.readAsDataURL(f);
+}
+function applyBranding(){
+  document.getElementById('topName').textContent=settings.name;
+  const prev=document.getElementById('logoPrev');
+  const top=document.getElementById('topLogo');
+  if(settings.logo){
+    prev.innerHTML=`<img src="${settings.logo}">`;
+    top.innerHTML=`<img src="${settings.logo}" style="width:100%;height:100%;object-fit:cover;border-radius:12px">`;
+  }else{
+    prev.innerHTML='Tap to<br>upload';
+    top.textContent=(settings.name||'শি').slice(0,2);
+  }
+}
+
+/* ============================================================
+   PIN Lock
+   ============================================================ */
+let pinBuffer='';
+function hashPin(p){let h=0;for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0}return String(h)}
+function savePin(){
+  const p=document.getElementById('setPin').value;
+  if(p&&p.length!==4){toast('৪ ডিজিট PIN দিন',true);return}
+  DB.set('pin',p?hashPin(p):'');
+  document.getElementById('setPin').value='';
+  toast(p?'🔐 PIN সেট হয়েছে':'লক বন্ধ করা হয়েছে');
+}
+function buildKeypad(){
+  const kp=document.getElementById('keypad');
+  kp.innerHTML=[1,2,3,4,5,6,7,8,9,'←',0,'✓'].map(k=>`<div class="key" onclick="pinKey('${k}')">${toBnNum(k)}</div>`).join('');
+  renderPinDots();
+}
+function renderPinDots(){
+  document.getElementById('pinDots').innerHTML=[0,1,2,3].map(i=>`<div class="pin-dot ${i<pinBuffer.length?'on':''}"></div>`).join('');
+}
+function pinKey(k){
+  if(k==='←'){pinBuffer=pinBuffer.slice(0,-1)}
+  else if(k==='✓'){checkPin()}
+  else if(pinBuffer.length<4){pinBuffer+=k;renderPinDots();if(pinBuffer.length===4)setTimeout(checkPin,150)}
+  renderPinDots();
+}
+function checkPin(){
+  const stored=DB.get('pin','');
+  if(hashPin(pinBuffer)===stored){document.getElementById('pinModal').classList.remove('show');pinBuffer=''}
+  else{toast('ভুল PIN',true);pinBuffer='';renderPinDots()}
+}
+function maybeLock(){
+  const stored=DB.get('pin','');
+  if(stored){buildKeypad();document.getElementById('pinModal').classList.add('show')}
+}
+
+/* ============================================================
+   Backup / Restore
+   ============================================================ */
+function backupData(){
+  const data={invoices,patients,products,doctors,settings,counter,pin:DB.get('pin','')};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='pharmacy_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();toast('⬇️ ব্যাকআপ ডাউনলোড হয়েছে');
+}
+function restoreData(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(d.invoices)DB.set('invoices',d.invoices);
+      if(d.patients)DB.set('patients',d.patients);
+      if(d.products)DB.set('products',d.products);
+      if(d.doctors)DB.set('doctors',d.doctors);
+      if(d.settings)DB.set('settings',d.settings);
+      if(d.counter)DB.set('counter',d.counter);
+      if(d.pin!==undefined)DB.set('pin',d.pin);
+      toast('⬆️ রিস্টোর সফল! রিলোড হচ্ছে...');
+      setTimeout(()=>location.reload(),1500);
+    }catch(err){toast('ফাইল সঠিক নয়',true)}
+  };
+  r.readAsText(f);
+}
+function clearAllData(){
+  if(!confirm('সব ডেটা স্থায়ীভাবে মুছে যাবে! নিশ্চিত?'))return;
+  if(!confirm('আবার নিশ্চিত করুন — এটি ফেরানো যাবে না।'))return;
+  Object.keys(localStorage).filter(k=>k.startsWith('pharmacy_')).forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+
+/* ============================================================
+   Export: PDF / PNG / WhatsApp / Print
+   ============================================================ */
+function buildReceiptHTML(inv){
+  const rows=inv.products.map((p,i)=>`
+    <tr>
+      <td style="padding:6px;border-bottom:1px solid #eee">${toBnNum(i+1)}</td>
+      <td style="padding:6px;border-bottom:1px solid #eee">${p.name}</td>
+      <td style="padding:6px;text-align:center;border-bottom:1px solid #eee">${toBnNum(p.qty)}</td>
+      <td style="padding:6px;text-align:right;border-bottom:1px solid #eee">${money(p.unitPrice)}</td>
+      <td style="padding:6px;text-align:right;border-bottom:1px solid #eee">${money(p.subtotal)}</td>
+    </tr>`).join('');
+  return `<div style="font-family:'Hind Siliguri',sans-serif;color:#111;background:#fff;padding:24px;max-width:600px">
+    <div style="text-align:center;border-bottom:2px solid #14b8a6;padding-bottom:12px">
+      ${settings.logo?`<img src="${settings.logo}" style="width:56px;height:56px;object-fit:cover;border-radius:8px">`:''}
+      <h2 style="color:#0d9488;margin:6px 0">${settings.name}</h2>
+      <div style="font-size:12px;color:#555">${settings.addr1} ${settings.addr2}</div>
+      <div style="font-size:12px;color:#555">📞 ${settings.phone} ${settings.email?'· '+settings.email:''}</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin:12px 0">
+      <div><b>${inv.id}</b><br>${inv.date} ${inv.time}</div>
+      <div style="text-align:right"><b>${inv.patient.name||''}</b><br>${inv.patient.mobile||''}</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr style="background:#f0fdfa">
+        <th style="padding:6px;text-align:left">#</th><th style="padding:6px;text-align:left">নাম</th>
+        <th style="padding:6px">Qty</th><th style="padding:6px;text-align:right">দাম</th><th style="padding:6px;text-align:right">মোট</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table>
+    <div style="margin-top:12px;font-size:13px">
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>সাবটোটাল</span><span>${money(inv.products.reduce((s,p)=>s+p.subtotal,0))}</span></div>
+      ${inv.doctorFee?`<div style="display:flex;justify-content:space-between;padding:3px 0"><span>ডাক্তার ফি</span><span>${money(inv.doctorFee)}</span></div>`:''}
+      ${inv.discount.amount?`<div style="display:flex;justify-content:space-between;padding:3px 0"><span>ডিসকাউন্ট</span><span>−${money(inv.discount.amount)}</span></div>`:''}
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-top:2px solid #14b8a6;font-size:17px;font-weight:700;color:#0d9488"><span>সর্বমোট</span><span>${money(inv.totalPayable)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>নগদ প্রদান</span><span>${money(inv.cashReceived)}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:3px 0"><span>ফেরত</span><span>${money(inv.changeReturn)}</span></div>
+      ${inv.due?`<div style="display:flex;justify-content:space-between;padding:3px 0;color:#f59e0b"><span>বাকি</span><span>${money(inv.due)}</span></div>`:''}
+    </div>
+    ${inv.notes?`<div style="font-size:12px;color:#555;margin-top:10px">📝 ${inv.notes}</div>`:''}
+    <div style="text-align:center;margin-top:18px;color:#0d9488;font-weight:600">${settings.thanks}</div>
+    <div style="text-align:center;font-size:11px;color:#999;margin-top:24px">_______________________<br>স্বাক্ষর</div>
+  </div>`;
+}
+function currentInvForExport(){
+  // সর্বশেষ সেভড, নাহলে ফর্ম থেকে অস্থায়ী
+  const rows=currentRows.filter(r=>r&&(r.name||r.unitPrice));
+  if(rows.length){
+    const sub=rows.reduce((s,r)=>s+r.qty*r.unitPrice,0);
+    const docFee=+document.getElementById('docFee').value||0;
+    const dType=document.getElementById('discType').value,dVal=+document.getElementById('discVal').value||0;
+    let disc=dType==='percent'?(sub+docFee)*dVal/100:dVal;
+    const total=Math.max(0,sub+docFee-disc);
+    const cash=+document.getElementById('cashRecv').value||0;
+    const paid=+document.getElementById('paidAmt').value||0;
+    return {
+      id:document.getElementById('invNo').value,
+      date:document.getElementById('invDate').value,time:document.getElementById('invTime').value,
+      patient:{name:document.getElementById('pName').value,mobile:document.getElementById('pMobile').value},
+      products:rows.map(r=>({name:r.name,qty:r.qty,unitPrice:r.unitPrice,subtotal:r.qty*r.unitPrice})),
+      doctorFee:docFee,discount:{amount:disc},totalPayable:total,
+      cashReceived:cash,changeReturn:Math.max(0,cash-total),due:Math.max(0,total-paid),
+      notes:document.getElementById('invNote').value
+    };
+  }
+  return invoices[invoices.length-1];
+}
+async function exportPDF(){
+  const inv=currentInvForExport();
+  if(!inv){toast('কোনো ইনভয়েস নেই',true);return}
+  const area=document.getElementById('printArea');
+  area.style.display='block';area.innerHTML=buildReceiptHTML(inv);
+  toast('PDF তৈরি হচ্ছে...');
+  const canvas=await html2canvas(area.firstElementChild,{scale:2,backgroundColor:'#fff'});
+  area.style.display='none';
+  const img=canvas.toDataURL('image/png');
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF('p','mm','a4');
+  const w=210,h=canvas.height*w/canvas.width;
+  pdf.addImage(img,'PNG',0,0,w,Math.min(h,297));
+  pdf.save(inv.id+'.pdf');
+  toast('📄 PDF সেভ হয়েছে');
+}
+async function exportPNG(){
+  const inv=currentInvForExport();
+  if(!inv){toast('কোনো ইনভয়েস নেই',true);return}
+  const area=document.getElementById('printArea');
+  area.style.display='block';area.innerHTML=buildReceiptHTML(inv);
+  const canvas=await html2canvas(area.firstElementChild,{scale:2,backgroundColor:'#fff'});
+  area.style.display='none';
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');a.download=inv.id+'.png';a.click();
+  toast('🖼️ ইমেজ সেভ হয়েছে');
+}
+function shareWhatsApp(){
+  const inv=currentInvForExport();
+  if(!inv){toast('কোনো ইনভয়েস নেই',true);return}
+  let msg=`*${settings.name}*\n${settings.addr1}\n\n`;
+  msg+=`ইনভয়েস: ${inv.id}\nতারিখ: ${inv.date}\n`;
+  if(inv.patient.name)msg+=`রোগী: ${inv.patient.name}\n`;
+  msg+=`\n`;
+  inv.products.forEach((p,i)=>{msg+=`${toBnNum(i+1)}. ${p.name} × ${toBnNum(p.qty)} = ${money(p.subtotal)}\n`});
+  if(inv.doctorFee)msg+=`ডাক্তার ফি: ${money(inv.doctorFee)}\n`;
+  if(inv.discount.amount)msg+=`ডিসকাউন্ট: −${money(inv.discount.amount)}\n`;
+  msg+=`\n*সর্বমোট: ${money(inv.totalPayable)}*\n`;
+  if(inv.due)msg+=`বাকি: ${money(inv.due)}\n`;
+  msg+=`\n${settings.thanks}`;
+  const phone=(inv.patient.mobile||'').replace(/\D/g,'');
+  const wa=phone?`https://wa.me/88${phone}?text=`:`https://wa.me/?text=`;
+  const url=wa+encodeURIComponent(msg);
+  if(navigator.share){navigator.share({text:msg}).catch(()=>window.open(url,'_blank'))}
+  else window.open(url,'_blank');
+}
+function printInvoice(){
+  const inv=currentInvForExport();
+  if(!inv){toast('কোনো ইনভয়েস নেই',true);return}
+  const area=document.getElementById('printArea');
+  area.style.display='block';area.innerHTML=buildReceiptHTML(inv);
+  window.print();
+  setTimeout(()=>area.style.display='none',500);
+}
+
+/* ============================================================
+   Init
+   ============================================================ */
+function initDateTime(){
+  const now=new Date();
+  document.getElementById('invDate').value=now.toISOString().slice(0,10);
+  document.getElementById('invTime').value=now.toTimeString().slice(0,5);
+}
+function init(){
+  loadSettings();
+  refreshDoctors();
+  refreshInvNo();
+  initDateTime();
+  addProdRow();
+  calcTotals();
+  maybeLock();
+  // ক্লিক আউটসাইড → autocomplete বন্ধ
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.ac-wrap'))document.querySelectorAll('.ac-list').forEach(l=>l.classList.remove('show'));
+  });
+}
+init();
 </script>
 </body>
-</html>
+  </html>
