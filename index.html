@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>শিফা ফার্মেসি — Invoice Management System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,15 +12,23 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ============================================================
-   ডিজাইন সিস্টেম — CSS Variables
+   ডিজাইন সিস্টেম — CSS Variables (Dark + Light)
    ============================================================ */
 :root{
+  --radius:18px;
+  --radius-sm:12px;
+  --font-bn:'Hind Siliguri',sans-serif;
+  --font-en:'Inter',sans-serif;
+}
+/* ---------- DARK THEME ---------- */
+[data-theme="dark"]{
   --bg:#0f172a;
   --bg2:#0b1222;
   --surface:rgba(30,41,59,.55);
+  --surface-solid:#1e293b;
   --surface2:rgba(51,65,85,.4);
   --border:rgba(148,163,184,.15);
-  --accent:#14b8a6;      /* teal — হোমিও ব্র্যান্ডিং */
+  --accent:#14b8a6;
   --accent2:#0d9488;
   --accent-glow:rgba(20,184,166,.35);
   --danger:#ef4444;
@@ -28,24 +36,50 @@
   --ok:#22c55e;
   --text:#e2e8f0;
   --muted:#94a3b8;
-  --radius:18px;
-  --radius-sm:12px;
-  --font-bn:'Hind Siliguri',sans-serif;
-  --font-en:'Inter',sans-serif;
   --shadow:0 8px 32px rgba(0,0,0,.4);
-}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
-body{
-  font-family:var(--font-bn);
-  background:
+  --nav-bg:rgba(15,23,42,.85);
+  --placeholder:#64748b;
+  --bg-image:
     radial-gradient(1200px 600px at 10% -10%, rgba(20,184,166,.12), transparent 60%),
     radial-gradient(1000px 500px at 100% 10%, rgba(59,130,246,.1), transparent 55%),
-    linear-gradient(180deg,var(--bg),var(--bg2));
+    linear-gradient(180deg,#0f172a,#0b1222);
+}
+/* ---------- LIGHT THEME ---------- */
+[data-theme="light"]{
+  --bg:#f1f5f9;
+  --bg2:#e2e8f0;
+  --surface:rgba(255,255,255,.75);
+  --surface-solid:#ffffff;
+  --surface2:rgba(241,245,249,.9);
+  --border:rgba(100,116,139,.2);
+  --accent:#0d9488;
+  --accent2:#0f766e;
+  --accent-glow:rgba(13,148,136,.2);
+  --danger:#dc2626;
+  --warn:#d97706;
+  --ok:#16a34a;
+  --text:#0f172a;
+  --muted:#64748b;
+  --shadow:0 8px 32px rgba(15,23,42,.1);
+  --nav-bg:rgba(255,255,255,.9);
+  --placeholder:#94a3b8;
+  --bg-image:
+    radial-gradient(1200px 600px at 10% -10%, rgba(20,184,166,.15), transparent 60%),
+    radial-gradient(1000px 500px at 100% 10%, rgba(59,130,246,.12), transparent 55%),
+    linear-gradient(180deg,#f8fafc,#e2e8f0);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{
+  font-family:var(--font-bn);
+  background:var(--bg-image);
+  background-attachment:fixed;
   color:var(--text);
   line-height:1.6;
   overflow-x:hidden;
-  padding-bottom:80px;
+  /* নিচের নেভিগেশন যেন কনটেন্ট না ঢাকে */
+  padding-bottom:calc(90px + env(safe-area-inset-bottom));
+  transition:background .4s ease,color .3s ease;
 }
 .en{font-family:var(--font-en)}
 input,textarea,select,button{font-family:inherit;color:inherit}
@@ -58,19 +92,30 @@ input,textarea,select,button{font-family:inherit;color:inherit}
   display:flex;align-items:center;gap:12px;margin-bottom:18px;
   padding:14px 16px;background:var(--surface);backdrop-filter:blur(16px);
   border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+  position:sticky;top:8px;z-index:60;
 }
 .topbar .logo{
   width:46px;height:46px;border-radius:12px;object-fit:cover;flex-shrink:0;
   background:linear-gradient(135deg,var(--accent),var(--accent2));
   display:grid;place-items:center;font-weight:700;color:#fff;font-size:20px;
-  border:1px solid rgba(255,255,255,.15);
+  border:1px solid rgba(255,255,255,.15);overflow:hidden;
 }
+.topbar .tb-txt{flex:1;min-width:0}
 .topbar h1{
   font-size:16px;font-weight:700;line-height:1.2;
-  background:linear-gradient(90deg,#fff,#99f6e4);
+  background:linear-gradient(90deg,var(--text),var(--accent));
   -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .topbar small{color:var(--muted);font-size:11px;font-weight:400}
+/* থিম টগল বাটন */
+.theme-toggle{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:var(--surface2);border:1px solid var(--border);
+  display:grid;place-items:center;cursor:pointer;font-size:20px;
+  transition:transform .2s,background .2s;
+}
+.theme-toggle:active{transform:scale(.9)}
 
 /* ============================================================
    Cards / Glassmorphism
@@ -78,7 +123,7 @@ input,textarea,select,button{font-family:inherit;color:inherit}
 .card{
   background:var(--surface);backdrop-filter:blur(16px);
   border:1px solid var(--border);border-radius:var(--radius);
-  box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;
+  box-shadow:var(--shadow);margin-bottom:14px;overflow:visible;
   animation:fadeUp .5s ease both;
 }
 .card-head{
@@ -89,9 +134,9 @@ input,textarea,select,button{font-family:inherit;color:inherit}
 .card-head .chev{margin-left:auto;transition:transform .3s ease;color:var(--muted)}
 .card.open .chev{transform:rotate(180deg)}
 .card-body{
-  max-height:0;overflow:hidden;transition:max-height .4s ease,padding .3s ease;padding:0 16px;
+  display:none;padding:0 16px 16px;
 }
-.card.open .card-body{max-height:4000px;padding:0 16px 16px}
+.card.open .card-body{display:block;animation:fadeUp .35s ease both}
 
 @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 .stagger>*{animation:fadeUp .5s ease both}
@@ -114,8 +159,12 @@ input,textarea,select{
 input:focus,textarea:focus,select:focus{
   border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);
 }
-input::placeholder,textarea::placeholder{color:#64748b}
+input::placeholder,textarea::placeholder{color:var(--placeholder)}
 textarea{resize:vertical;min-height:60px}
+select{appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;
+}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 @media(max-width:420px){.grid3{grid-template-columns:1fr 1fr}}
@@ -131,9 +180,10 @@ textarea{resize:vertical;min-height:60px}
   transition:transform .1s,box-shadow .2s,filter .2s;width:100%;
   box-shadow:0 6px 18px var(--accent-glow);
 }
+.btn:hover{filter:brightness(1.05)}
 .btn:active{transform:scale(.96)}
 .btn.ghost{background:var(--surface2);color:var(--text);box-shadow:none;border:1px solid var(--border)}
-.btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 6px 18px rgba(239,68,68,.3)}
+.btn.danger{background:linear-gradient(135deg,var(--danger),#dc2626);box-shadow:0 6px 18px rgba(239,68,68,.3)}
 .btn.sm{padding:8px 12px;font-size:12px;width:auto}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .btn-row .btn{flex:1;min-width:120px}
@@ -146,35 +196,45 @@ textarea{resize:vertical;min-height:60px}
 .iconbtn.del:hover{color:var(--danger)}
 
 /* ============================================================
-   Product rows
+   Product rows — বড় ফিল্ড + আড়াআড়ি স্ক্রল
    ============================================================ */
-.prod-row{
-  display:grid;grid-template-columns:26px 1fr 60px 78px 78px 36px;gap:6px;align-items:center;
-  padding:10px 0;border-bottom:1px dashed var(--border);
-  animation:fadeUp .3s ease both;
+.prod-scroll{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:4px;
 }
-.prod-row .sl{color:var(--muted);font-size:12px;text-align:center;font-weight:600}
-.prod-row input{padding:8px 8px;font-size:13px}
-.prod-row .sub{font-size:13px;font-weight:600;color:var(--accent);text-align:right;padding-right:4px}
+.prod-scroll::-webkit-scrollbar{height:6px}
+.prod-scroll::-webkit-scrollbar-thumb{background:var(--accent);border-radius:6px}
+.prod-inner{min-width:560px} /* ফিল্ড বড় হওয়ায় প্রয়োজনে আড়াআড়ি স্ক্রল */
+
 .prod-head{
-  display:grid;grid-template-columns:26px 1fr 60px 78px 78px 36px;gap:6px;
+  display:grid;grid-template-columns:32px minmax(200px,1fr) 80px 100px 100px 40px;gap:8px;
   font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;
   padding:6px 0;border-bottom:1px solid var(--border);font-weight:600;
 }
 .prod-head span:nth-child(4),.prod-head span:nth-child(5){text-align:right}
+.prod-row{
+  display:grid;grid-template-columns:32px minmax(200px,1fr) 80px 100px 100px 40px;gap:8px;align-items:center;
+  padding:10px 0;border-bottom:1px dashed var(--border);
+  animation:fadeUp .3s ease both;
+}
+.prod-row .sl{color:var(--muted);font-size:13px;text-align:center;font-weight:600}
+.prod-row input{padding:11px 12px;font-size:15px} /* বড় ফিল্ড — লেখা পরিষ্কার দেখা যায় */
+.prod-row .p-name{font-size:15px}
+.prod-row .sub{font-size:14px;font-weight:600;color:var(--accent);text-align:right;padding-right:4px;white-space:nowrap}
 
 /* autocomplete */
 .ac-wrap{position:relative}
 .ac-list{
   position:absolute;top:100%;left:0;right:0;z-index:50;
-  background:#1e293b;border:1px solid var(--border);border-radius:10px;
-  margin-top:4px;max-height:180px;overflow-y:auto;box-shadow:var(--shadow);display:none;
+  background:var(--surface-solid);border:1px solid var(--border);border-radius:10px;
+  margin-top:4px;max-height:200px;overflow-y:auto;box-shadow:var(--shadow);display:none;
 }
 .ac-list.show{display:block}
-.ac-item{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
+.ac-item{padding:10px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
 .ac-item:hover,.ac-item.active{background:var(--accent);color:#fff}
 .ac-item small{color:var(--muted);float:right}
-.ac-item:hover small{color:rgba(255,255,255,.8)}
+.ac-item:hover small{color:rgba(255,255,255,.85)}
 
 /* ============================================================
    Summary
@@ -198,8 +258,9 @@ textarea{resize:vertical;min-height:60px}
 .bottomnav{
   position:fixed;bottom:0;left:0;right:0;z-index:100;
   display:flex;justify-content:space-around;
-  background:rgba(15,23,42,.85);backdrop-filter:blur(20px);
-  border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  background:var(--nav-bg);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
 }
 .navbtn{
   flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
@@ -244,48 +305,27 @@ textarea{resize:vertical;min-height:60px}
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
   padding:14px;text-align:center;animation:fadeUp .4s ease both;
 }
-.stat .v{font-size:22px;font-weight:800;color:var(--accent)}
+.stat .v{font-size:20px;font-weight:800;color:var(--accent)}
 .stat .l{font-size:11px;color:var(--muted);margin-top:2px}
-.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding-top:10px}
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:120px;padding:10px 0 24px}
 .bar-chart .bar{
   flex:1;background:linear-gradient(180deg,var(--accent),var(--accent2));
   border-radius:6px 6px 0 0;min-height:4px;position:relative;transition:height .6s ease;
 }
-.bar-chart .bar span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted)}
+.bar-chart .bar span{position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:9px;color:var(--muted)}
 
 /* ============================================================
    Toast
    ============================================================ */
 .toast{
-  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:#1e293b;border:1px solid var(--accent);color:var(--text);
-  padding:12px 20px;border-radius:30px;font-size:13px;z-index:2000;
+  position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--surface-solid);border:1px solid var(--accent);color:var(--text);
+  padding:12px 20px;border-radius:30px;font-size:13px;z-index:2000;max-width:90vw;text-align:center;
   box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:all .3s;display:flex;align-items:center;gap:8px;
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.err{border-color:var(--danger)}
-
-/* ============================================================
-   Modal (PIN lock / confirm)
-   ============================================================ */
-.modal{
-  position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
-  display:none;place-items:center;padding:20px;
-}
-.modal.show{display:grid;animation:fadeUp .3s ease}
-.modal-card{
-  background:var(--surface);backdrop-filter:blur(20px);border:1px solid var(--border);
-  border-radius:var(--radius);padding:24px;max-width:340px;width:100%;text-align:center;
-}
-.pin-dots{display:flex;justify-content:center;gap:14px;margin:18px 0}
-.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);transition:.2s}
-.pin-dot.on{background:var(--accent);box-shadow:0 0 10px var(--accent-glow)}
-.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
-.key{
-  padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;
-  font-size:20px;font-weight:600;cursor:pointer;transition:transform .1s;
-}
-.key:active{transform:scale(.9);background:var(--accent);color:#fff}
 
 .empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:13px}
 .section-title{font-size:13px;color:var(--muted);margin:16px 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
@@ -301,6 +341,40 @@ textarea{resize:vertical;min-height:60px}
   font-size:12px;cursor:pointer;transition:.2s;
 }
 .chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ============================================================
+   ডেস্কটপ / কম্পিউটার রেসপন্সিভ
+   ============================================================ */
+@media(min-width:768px){
+  .app{max-width:1100px;padding:24px 24px 32px}
+  /* বড় স্ক্রিনে সাইড-বাই-সাইড কার্ড লেআউট */
+  #view-new{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+  #view-new.active{display:grid}
+  #view-new .card{margin-bottom:0;grid-column:auto}
+  /* প্রোডাক্ট ও সামারি কার্ড ফুল উইথ */
+  #view-new .card:nth-child(3){grid-column:1/-1}
+  #view-new .card:nth-child(5){grid-column:1/-1}
+
+  /* বড় স্ক্রিনে প্রোডাক্ট রো — আর স্ক্রল লাগবে না */
+  .prod-inner{min-width:0}
+
+  .stats{grid-template-columns:repeat(4,1fr)}
+
+  /* ডেস্কটপে নিচের নেভ বাদ, টপ নেভ */
+  body{padding-bottom:20px}
+  .bottomnav{
+    position:sticky;top:0;bottom:auto;max-width:1100px;margin:0 auto 16px;
+    border-radius:var(--radius);border:1px solid var(--border);border-top:1px solid var(--border);
+    padding:6px;
+  }
+  .navbtn{flex-direction:row;font-size:13px;padding:10px;gap:8px;border-radius:12px}
+  .navbtn.active{background:var(--surface2)}
+  .topbar{position:static}
+}
+@media(min-width:1024px){
+  .app{max-width:1200px}
+}
+
 @media print{
   body>*:not(#printArea){display:none!important}
   #printArea{display:block!important;color:#000;background:#fff}
@@ -313,10 +387,27 @@ textarea{resize:vertical;min-height:60px}
   <!-- Topbar -->
   <div class="topbar">
     <div class="logo" id="topLogo">শি</div>
-    <div>
+    <div class="tb-txt">
       <h1 id="topName">শিফা ফার্মেসি</h1>
       <small class="en">Invoice Management System</small>
     </div>
+    <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="থিম পরিবর্তন">🌙</div>
+  </div>
+
+  <!-- Bottom / Top nav (ডেস্কটপে টপে চলে আসবে) -->
+  <div class="bottomnav">
+    <button class="navbtn active" data-view="new" onclick="switchView('new',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>নতুন
+    </button>
+    <button class="navbtn" data-view="history" onclick="switchView('history',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>হিস্টরি
+    </button>
+    <button class="navbtn" data-view="patients" onclick="switchView('patients',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>স্টক
+    </button>
+    <button class="navbtn" data-view="settings" onclick="switchView('settings',this)">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>সেটিংস
+    </button>
   </div>
 
   <!-- ============ VIEW: NEW INVOICE ============ -->
@@ -369,10 +460,14 @@ textarea{resize:vertical;min-height:60px}
         <span class="chev">▾</span>
       </div>
       <div class="card-body">
-        <div class="prod-head">
-          <span>#</span><span>নাম</span><span>Qty</span><span>দাম</span><span>মোট</span><span></span>
+        <div class="prod-scroll">
+          <div class="prod-inner">
+            <div class="prod-head">
+              <span>#</span><span>নাম</span><span>Qty</span><span>দাম</span><span>মোট</span><span></span>
+            </div>
+            <div id="prodList"></div>
+          </div>
         </div>
-        <div id="prodList"></div>
         <button class="btn ghost sm" style="width:100%;margin-top:12px" onclick="addProdRow()">＋ নতুন প্রোডাক্ট যোগ</button>
       </div>
     </div>
@@ -449,13 +544,13 @@ textarea{resize:vertical;min-height:60px}
     <div class="section-title">📊 ড্যাশবোর্ড</div>
     <div class="stats" id="dashStats"></div>
     <div class="card open">
-      <div class="card-head"><span class="ic">📈</span> গত ৭ দিনের বিক্রি</div>
+      <div class="card-head" onclick="toggleCard(this)"><span class="ic">📈</span> গত ৭ দিনের বিক্রি<span class="chev">▾</span></div>
       <div class="card-body">
         <div class="bar-chart" id="weekChart"></div>
       </div>
     </div>
     <div class="card open">
-      <div class="card-head"><span class="ic">🏆</span> সর্বাধিক বিক্রীত প্রোডাক্ট</div>
+      <div class="card-head" onclick="toggleCard(this)"><span class="ic">🏆</span> সর্বাধিক বিক্রীত প্রোডাক্ট<span class="chev">▾</span></div>
       <div class="card-body" id="topProducts"></div>
     </div>
 
@@ -500,7 +595,7 @@ textarea{resize:vertical;min-height:60px}
   <!-- ============ VIEW: SETTINGS ============ -->
   <div class="view" id="view-settings">
     <div class="card open">
-      <div class="card-head"><span class="ic">🏪</span> ফার্মেসি ব্র্যান্ডিং</div>
+      <div class="card-head" onclick="toggleCard(this)"><span class="ic">🏪</span> ফার্মেসি ব্র্যান্ডিং<span class="chev">▾</span></div>
       <div class="card-body">
         <label>শপ লোগো</label>
         <div class="logo-upload" onclick="document.getElementById('logoInput').click()" id="logoPrev">Tap to<br>upload</div>
@@ -520,18 +615,18 @@ textarea{resize:vertical;min-height:60px}
           <span class="chip on" data-num="en" onclick="setNumFmt(this)">English (123)</span>
           <span class="chip" data-num="bn" onclick="setNumFmt(this)">বাংলা (১২৩)</span>
         </div>
+        <label>থিম</label>
+        <div class="chip-row">
+          <span class="chip on" data-theme-opt="dark" onclick="setTheme('dark')">🌙 ডার্ক</span>
+          <span class="chip" data-theme-opt="light" onclick="setTheme('light')">☀️ লাইট</span>
+        </div>
         <button class="btn" style="margin-top:14px" onclick="saveSettings()">✅ Save Settings</button>
       </div>
     </div>
 
     <div class="card open">
-      <div class="card-head"><span class="ic">🔒</span> নিরাপত্তা ও ডেটা</div>
+      <div class="card-head" onclick="toggleCard(this)"><span class="ic">💾</span> ব্যাকআপ ও ডেটা<span class="chev">▾</span></div>
       <div class="card-body">
-        <label>অ্যাপ লক (৪-ডিজিট PIN)</label>
-        <input id="setPin" type="password" inputmode="numeric" maxlength="4" placeholder="নতুন PIN (খালি রাখলে লক বন্ধ)" class="en">
-        <div class="btn-row">
-          <button class="btn ghost" onclick="savePin()">🔐 PIN সেট</button>
-        </div>
         <div class="section-title">ব্যাকআপ / রিস্টোর</div>
         <div class="btn-row">
           <button class="btn ghost" onclick="backupData()">⬇️ ব্যাকআপ (JSON)</button>
@@ -546,33 +641,7 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
-<!-- Bottom nav -->
-<div class="bottomnav">
-  <button class="navbtn active" data-view="new" onclick="switchView('new',this)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>নতুন
-  </button>
-  <button class="navbtn" data-view="history" onclick="switchView('history',this)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>হিস্টরি
-  </button>
-  <button class="navbtn" data-view="patients" onclick="switchView('patients',this)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>স্টক
-  </button>
-  <button class="navbtn" data-view="settings" onclick="switchView('settings',this)">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>সেটিংস
-  </button>
-</div>
-
 <div class="toast" id="toast"></div>
-
-<!-- PIN Modal -->
-<div class="modal" id="pinModal">
-  <div class="modal-card">
-    <h3 style="margin-bottom:6px">🔒 অ্যাপ লক</h3>
-    <p style="color:var(--muted);font-size:13px">PIN দিন</p>
-    <div class="pin-dots" id="pinDots"></div>
-    <div class="keypad" id="keypad"></div>
-  </div>
-</div>
 
 <!-- Print area (hidden) -->
 <div id="printArea" style="display:none"></div>
@@ -582,7 +651,7 @@ textarea{resize:vertical;min-height:60px}
    ডেটা লেয়ার — localStorage
    ============================================================ */
 const DB = {
-  get:(k,d)=>{try{return JSON.parse(localStorage.getItem('pharmacy_'+k))??d}catch(e){return d}},
+  get:(k,d)=>{try{const v=JSON.parse(localStorage.getItem('pharmacy_'+k));return v===null?d:v}catch(e){return d}},
   set:(k,v)=>localStorage.setItem('pharmacy_'+k,JSON.stringify(v))
 };
 let invoices = DB.get('invoices',[]);
@@ -591,11 +660,28 @@ let products = DB.get('products',[]);
 let doctors  = DB.get('doctors',[{name:'ডাঃ (ডিফল্ট)',fee:0}]);
 let settings = DB.get('settings',{
   name:'শিফা ফার্মেসি',addr1:'',addr2:'',phone:'',email:'',
-  thanks:'ধন্যবাদ! আবার আসবেন।',prefix:'INV-2026-',start:1,numFmt:'en',logo:''
+  thanks:'ধন্যবাদ! আবার আসবেন।',prefix:'INV-2026-',start:1,numFmt:'en',logo:'',theme:'dark'
 });
 let counter  = DB.get('counter',settings.start||1);
 let currentRows = [];
 let histFilter = 'all';
+
+/* ============================================================
+   Theme (Dark / Light)
+   ============================================================ */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  const tg=document.getElementById('themeToggle');
+  if(tg)tg.textContent=t==='dark'?'🌙':'☀️';
+  document.querySelectorAll('[data-theme-opt]').forEach(c=>c.classList.toggle('on',c.dataset.themeOpt===t));
+}
+function setTheme(t){
+  settings.theme=t;DB.set('settings',settings);applyTheme(t);
+  toast(t==='dark'?'🌙 ডার্ক মোড':'☀️ লাইট মোড');
+}
+function toggleTheme(){
+  setTheme((settings.theme==='dark')?'light':'dark');
+}
 
 /* ============================================================
    Helpers
@@ -639,7 +725,7 @@ function addProdRow(data){
   row.innerHTML=`
     <span class="sl">${toBnNum(idx+1)}</span>
     <div class="ac-wrap">
-      <input class="p-name" placeholder="নাম" value="${data?data.name:''}" oninput="prodNameInput(this,${idx})">
+      <input class="p-name" placeholder="প্রোডাক্টের নাম লিখুন" value="${data?escAttr(data.name):''}" oninput="prodNameInput(this,${idx})">
       <div class="ac-list"></div>
     </div>
     <input class="p-qty" type="number" min="1" value="${data?data.qty:1}" oninput="rowCalc(${idx})">
@@ -651,12 +737,14 @@ function addProdRow(data){
   document.getElementById('prodList').appendChild(row);
   rowCalc(idx);
 }
+function escAttr(s){return String(s||'').replace(/"/g,'&quot;')}
 function delProdRow(idx){
   currentRows[idx]=null;
   const r=document.querySelector(`.prod-row[data-idx="${idx}"]`);
-  if(r){r.style.maxHeight=r.offsetHeight+'px';r.style.overflow='hidden';
-    requestAnimationFrame(()=>{r.style.transition='.3s';r.style.maxHeight='0';r.style.opacity='0';r.style.padding='0'});
-    setTimeout(()=>{r.remove();calcTotals()},300)}
+  if(r){
+    r.style.transition='.3s';r.style.opacity='0';r.style.transform='translateX(-20px)';
+    setTimeout(()=>{r.remove();calcTotals()},280);
+  }
 }
 function rowCalc(idx){
   const r=document.querySelector(`.prod-row[data-idx="${idx}"]`);if(!r)return;
@@ -817,7 +905,7 @@ function saveInvoice(){
   rows.forEach(r=>{
     const p=products.find(x=>x.name===r.name);
     if(p){p.stock=Math.max(0,p.stock-r.qty)}
-    else{products.push({name:r.name,price:r.unitPrice,stock:0,thresh:10,category:'অন্যান্য',expiry:''})}
+    else if(r.name){products.push({name:r.name,price:r.unitPrice,stock:0,thresh:10,category:'অন্যান্য',expiry:''})}
   });
   DB.set('products',products);
 
@@ -1044,46 +1132,10 @@ function applyBranding(){
 }
 
 /* ============================================================
-   PIN Lock
-   ============================================================ */
-let pinBuffer='';
-function hashPin(p){let h=0;for(let i=0;i<p.length;i++){h=(h<<5)-h+p.charCodeAt(i);h|=0}return String(h)}
-function savePin(){
-  const p=document.getElementById('setPin').value;
-  if(p&&p.length!==4){toast('৪ ডিজিট PIN দিন',true);return}
-  DB.set('pin',p?hashPin(p):'');
-  document.getElementById('setPin').value='';
-  toast(p?'🔐 PIN সেট হয়েছে':'লক বন্ধ করা হয়েছে');
-}
-function buildKeypad(){
-  const kp=document.getElementById('keypad');
-  kp.innerHTML=[1,2,3,4,5,6,7,8,9,'←',0,'✓'].map(k=>`<div class="key" onclick="pinKey('${k}')">${toBnNum(k)}</div>`).join('');
-  renderPinDots();
-}
-function renderPinDots(){
-  document.getElementById('pinDots').innerHTML=[0,1,2,3].map(i=>`<div class="pin-dot ${i<pinBuffer.length?'on':''}"></div>`).join('');
-}
-function pinKey(k){
-  if(k==='←'){pinBuffer=pinBuffer.slice(0,-1)}
-  else if(k==='✓'){checkPin()}
-  else if(pinBuffer.length<4){pinBuffer+=k;renderPinDots();if(pinBuffer.length===4)setTimeout(checkPin,150)}
-  renderPinDots();
-}
-function checkPin(){
-  const stored=DB.get('pin','');
-  if(hashPin(pinBuffer)===stored){document.getElementById('pinModal').classList.remove('show');pinBuffer=''}
-  else{toast('ভুল PIN',true);pinBuffer='';renderPinDots()}
-}
-function maybeLock(){
-  const stored=DB.get('pin','');
-  if(stored){buildKeypad();document.getElementById('pinModal').classList.add('show')}
-}
-
-/* ============================================================
    Backup / Restore
    ============================================================ */
 function backupData(){
-  const data={invoices,patients,products,doctors,settings,counter,pin:DB.get('pin','')};
+  const data={invoices,patients,products,doctors,settings,counter};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
@@ -1102,7 +1154,6 @@ function restoreData(e){
       if(d.doctors)DB.set('doctors',d.doctors);
       if(d.settings)DB.set('settings',d.settings);
       if(d.counter)DB.set('counter',d.counter);
-      if(d.pin!==undefined)DB.set('pin',d.pin);
       toast('⬆️ রিস্টোর সফল! রিলোড হচ্ছে...');
       setTimeout(()=>location.reload(),1500);
     }catch(err){toast('ফাইল সঠিক নয়',true)}
@@ -1160,7 +1211,6 @@ function buildReceiptHTML(inv){
   </div>`;
 }
 function currentInvForExport(){
-  // সর্বশেষ সেভড, নাহলে ফর্ম থেকে অস্থায়ী
   const rows=currentRows.filter(r=>r&&(r.name||r.unitPrice));
   if(rows.length){
     const sub=rows.reduce((s,r)=>s+r.qty*r.unitPrice,0);
@@ -1246,13 +1296,13 @@ function initDateTime(){
   document.getElementById('invTime').value=now.toTimeString().slice(0,5);
 }
 function init(){
+  applyTheme(settings.theme||'dark');
   loadSettings();
   refreshDoctors();
   refreshInvNo();
   initDateTime();
   addProdRow();
   calcTotals();
-  maybeLock();
   // ক্লিক আউটসাইড → autocomplete বন্ধ
   document.addEventListener('click',e=>{
     if(!e.target.closest('.ac-wrap'))document.querySelectorAll('.ac-list').forEach(l=>l.classList.remove('show'));
@@ -1261,4 +1311,4 @@ function init(){
 init();
 </script>
 </body>
-  </html>
+             </html>
